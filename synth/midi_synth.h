@@ -25,7 +25,7 @@ public:
         voice_allocator::set_samplerate(_samplerate);
     }
 
-    void process_block(double* _output, int _n_frames)
+    void process_block(double** _outputs, int _n_frames)
     {
         // sample accurate event handling based on the iPlug2 synth by Oli Larkin
         if (m_voices_active || !m_event_queue.empty()) {
@@ -53,7 +53,7 @@ public:
                     m_event_queue.erase(m_event_queue.begin());
                 }
 
-                voice_allocator::process_samples(_output, start_index, block_size);
+                voice_allocator::process_samples(_outputs, start_index, block_size);
 
                 samples_remaining -= block_size;
                 start_index += block_size;
@@ -64,7 +64,8 @@ public:
             flush_event_queue(_n_frames);
         } else {
             for (int s = 0; s < _n_frames; s++) {
-                _output[s] = 0.;
+                _outputs[0][s] = 0.;
+                _outputs[1][s] = 0.;
             }
         }
     }

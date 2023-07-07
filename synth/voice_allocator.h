@@ -47,16 +47,20 @@ public:
         std::for_each(voices.begin(), voices.end(), f);
     }
 
-    void process_samples(double* _output, int _start_index, int _block_size)
+    void process_samples(double** _outputs, int _start_index, int _block_size)
     {
         for (int s = _start_index; s < _start_index + _block_size; s++) {
 
             process_events(s);
 
             float voices_signal = 0.;
-            std::for_each(voices.begin(), voices.end(), [&voices_signal](t_voice& voice) { voices_signal += (voice.process_sample() / 3.); });
 
-            _output[s] = voices_signal;
+            std::for_each(voices.begin(), voices.end(), [&voices_signal](t_voice& voice) {
+                voices_signal += (voice.process_sample() / 3.);
+            });
+
+            _outputs[0][s] = voices_signal;
+            _outputs[1][s] = voices_signal;
         }
     }
 
