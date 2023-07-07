@@ -36,7 +36,7 @@ public:
     void note_off(const note_event& event)
     {
         for (auto it = voices.begin(); it != voices.end(); it++) {
-            if ((*it).MidiNote == event.midi_note) {
+            if ((*it).midi_note == event.midi_note) {
                 (*it).note_off();
             }
         }

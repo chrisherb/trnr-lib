@@ -2,6 +2,9 @@
 #include "tx_sineosc.h"
 #include "tx_envelope.h"
 #include "tx_operator.h"
+#include "../util/audio_math.h"
+
+using namespace trnr::lib::util;
 
 namespace trnr::lib::synth {
 
@@ -22,7 +25,7 @@ public:
 
     bool gate = false;
     bool trigger = false;
-    float frequency = 100.f;
+    int midi_note = 0;
     float velocity = 1.f;
 
     int algorithm;
@@ -35,9 +38,20 @@ public:
     tx_operator op2;
     tx_operator op3;
 
+    void note_on(int _note, float _velocity) {
+        this->gate = true;
+        this->trigger = true;
+        midi_note = _note;
+        velocity = _velocity;
+    }
+
+    void note_off() {
+        this->gate = false;
+    }
+
     float process_sample() {
         float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
-        float pitched_freq = frequency + pitch_env_signal;
+        float pitched_freq = midi_to_frequency(midi_note) + pitch_env_signal;
 
         float output = 0.f;
 

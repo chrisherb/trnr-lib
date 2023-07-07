@@ -11,7 +11,8 @@ template <typename t_voice>
 class midi_synth : public voice_allocator<t_voice> {
 public:
     midi_synth(int _n_voices, double _samplerate, int _block_size)
-        : m_samplerate { _samplerate }
+        : voice_allocator<t_voice> { _samplerate }
+        , m_samplerate { _samplerate }
         , m_block_size { _block_size }
         , m_voices_active { false }
     {
@@ -58,13 +59,12 @@ public:
                 start_index += block_size;
             }
 
-            voices_active = voice_allocator::voices_active();
+            m_voices_active = voice_allocator::voices_active();
 
             flush_event_queue(_n_frames);
         } else {
             for (int s = 0; s < _n_frames; s++) {
-                outputs[0][s] = 0.;
-                outputs[1][s] = 0.;
+                _output[s] = 0.;
             }
         }
     }

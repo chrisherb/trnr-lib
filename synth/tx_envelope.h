@@ -17,6 +17,7 @@ enum env_state {
 
 class tx_envelope {
 public:
+    env_state state;
     float attack1_rate;
     float attack1_level;
     float attack2_rate;
@@ -259,7 +260,6 @@ private:
     double samplerate;
     int phase;
     float level;
-    env_state state;
     float start_level;
     float h1;
     float h2;
