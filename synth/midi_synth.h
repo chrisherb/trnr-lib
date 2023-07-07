@@ -7,8 +7,8 @@
 namespace trnr::lib::synth {
 
 // a generic midi synth base class with sample accurate event handling.
-template <typename t_synth>
-class midi_synth : public voice_allocator<t_synth> {
+template <typename t_voice>
+class midi_synth : public voice_allocator<t_voice> {
 public:
     midi_synth(int _n_voices, double _samplerate, int _block_size)
         : m_samplerate { _samplerate }
