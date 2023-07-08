@@ -7,8 +7,8 @@ class tx_sineosc {
 public:
     bool phase_reset;
 
-    tx_sineosc(double _samplerate) 
-        : samplerate { _samplerate }
+    tx_sineosc() 
+        : samplerate { 44100 }
         , phase_resolution { 16.f }
         , phase { 0. }
         , history { 0. }

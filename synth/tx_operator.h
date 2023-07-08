@@ -5,11 +5,9 @@
 namespace trnr {
 class tx_operator {
 public:
-    tx_operator(double samplerate)
+    tx_operator()
         : ratio { 1 }
         , amplitude { 1.0f }
-        , envelope(samplerate)
-        , oscillator(samplerate)
     {
     }
 

@@ -10,17 +10,13 @@ namespace trnr {
 template <typename t_voice>
 class midi_synth : public voice_allocator<t_voice> {
 public:
-    midi_synth(int _n_voices, double _samplerate, int _block_size)
-        : voice_allocator<t_voice> { _samplerate }
-        , m_samplerate { _samplerate }
-        , m_block_size { _block_size }
-        , m_voices_active { false }
+    midi_synth(int _n_voices)
+        : m_voices_active { false }
     {
     }
 
-    void set_samplerate(double _samplerate, int _block_size)
+    void set_samplerate_blocksize(double _samplerate, int _block_size)
     {
-        m_samplerate = _samplerate;
         m_block_size = _block_size;
         voice_allocator::set_samplerate(_samplerate);
     }
@@ -87,7 +83,6 @@ public:
 
 private:
     std::vector<note_event> m_event_queue;
-    double m_samplerate;
     int m_block_size;
     bool m_voices_active;
 };

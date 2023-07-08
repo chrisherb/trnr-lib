@@ -8,15 +8,10 @@ namespace trnr {
 
 class tx_voice {
 public:
-    tx_voice(double samplerate) 
+    tx_voice() 
         : algorithm { 0 }
         , pitch_env_amt { 0.f }
         , feedback_amt { 0.f }
-        , pitch_env(samplerate)
-        , feedback_osc(samplerate)
-        , op1(samplerate)
-        , op2(samplerate)
-        , op3(samplerate)
         , bit_resolution(12.f)
     {
     }

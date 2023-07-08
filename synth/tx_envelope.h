@@ -30,8 +30,8 @@ public:
     float release1_level;
     float release2_rate;
 
-    tx_envelope(double _samplerate)
-        : samplerate { _samplerate }
+    tx_envelope()
+        : samplerate { 44100. }
         , attack1_rate { 0 }
         , attack1_level { 0 }
         , attack2_rate { 0 }

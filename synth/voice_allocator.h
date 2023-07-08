@@ -9,9 +9,8 @@ class voice_allocator {
 public:
     std::vector<t_voice> voices;
     
-    voice_allocator(const double& _samplerate)
-        : samplerate { _samplerate }
-        , voices(8, t_voice(_samplerate))
+    voice_allocator()
+        : voices(8, t_voice())
     {
     }
 
@@ -83,14 +82,12 @@ public:
 
     void set_samplerate(double _samplerate)
     {
-        this->samplerate = _samplerate;
         for (int i = 0; i < voices.size(); i++) {
             voices.at(i).set_samplerate(_samplerate);
         }
     }
 
 private:
-    double samplerate;
     std::vector<note_event> input_queue;
 
     t_voice* get_free_voice(float frequency)
