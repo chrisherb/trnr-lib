@@ -1,6 +1,6 @@
 #include <math.h>
 
-namespace trnr::lib::util {
+namespace trnr {
 	static inline double lin_2_db(double lin) {
 		return 20 * log(lin);
 	}

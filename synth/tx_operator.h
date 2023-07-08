@@ -2,7 +2,7 @@
 #include "tx_sineosc.h"
 #include "tx_envelope.h"
 
-namespace trnr::lib::synth {
+namespace trnr {
 class tx_operator {
 public:
     tx_operator(double samplerate)

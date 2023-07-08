@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-namespace trnr::lib::dynamics {
+namespace trnr {
 // compressor based on pop2 by Chris Johnson
 class aw_pop2 {
 public:

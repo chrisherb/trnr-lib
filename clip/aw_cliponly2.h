@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdlib>
 
-namespace trnr::lib::clip {
+namespace trnr {
 // Clipper based on ClipOnly2 by Chris Johnson
 class aw_cliponly2 {
 public:

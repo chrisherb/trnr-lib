@@ -3,7 +3,7 @@
 #include <math.h>
 #include <array>
 
-namespace trnr::lib::filter {
+namespace trnr {
 class chebyshev {
 public:
     void set_samplerate(double _samplerate) {

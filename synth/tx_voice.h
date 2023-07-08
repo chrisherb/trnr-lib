@@ -4,9 +4,7 @@
 #include "tx_operator.h"
 #include "../util/audio_math.h"
 
-using namespace trnr::lib::util;
-
-namespace trnr::lib::synth {
+namespace trnr {
 
 class tx_voice {
 public:

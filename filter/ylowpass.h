@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-namespace trnr::lib::filter {
+namespace trnr {
 // Lowpass filter based on YLowpass by Chris Johnson
 class ylowpass {
 public:

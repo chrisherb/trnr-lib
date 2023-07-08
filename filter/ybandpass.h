@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-namespace trnr::lib::filter {
+namespace trnr {
 // Bandpass filter based on YBandpass by Chris Johnson
 class ybandpass {
 public:

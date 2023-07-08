@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
 
-namespace trnr::lib::synth {
+namespace trnr {
 
 class tx_sineosc {
 public:

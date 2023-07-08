@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-namespace trnr::lib::clip {
+namespace trnr {
 // modeled tube preamp based on tube2 by Chris Johnson
 class aw_tube2 {
 public:

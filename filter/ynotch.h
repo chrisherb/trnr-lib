@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-namespace trnr::lib::filter {
+namespace trnr {
 // Notch filter based on YNotch by Chris Johnson
 class ynotch {
 public:

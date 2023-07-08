@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace trnr::lib::companding {
+namespace trnr {
 // mulaw companding based on code by Emilie Gillet / Mutable Instruments
 class mulaw {
 public:

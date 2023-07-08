@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-namespace trnr::lib::clip {
+namespace trnr {
 // soft clipper based on ClipSoftly by Chris Johnson
 class aw_clipsoftly {
 public:

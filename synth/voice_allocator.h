@@ -2,7 +2,7 @@
 #include <vector>
 #include "note_event.h"
 
-namespace trnr::lib::synth {
+namespace trnr {
 
 template <typename t_voice>
 class voice_allocator {

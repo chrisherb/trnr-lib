@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cmath>
 
-namespace trnr::lib::companding {
+namespace trnr {
 // ulaw compansion based on code by Chris Johnson
 class ulaw {
 public:

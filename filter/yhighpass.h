@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-namespace trnr::lib::filter {
+namespace trnr {
 // Highpass filter based on YHighpass by Chris Johnson
 class yhighpass {
 public:

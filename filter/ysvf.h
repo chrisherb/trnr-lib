@@ -4,7 +4,7 @@
 #include "ybandpass.h"
 #include "ynotch.h"
 
-namespace trnr::lib::filter {
+namespace trnr {
 
 enum filter_types {
     lowpass = 0,

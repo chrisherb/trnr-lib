@@ -4,7 +4,7 @@
 #include "note_event.h"
 #include "voice_allocator.h"
 
-namespace trnr::lib::synth {
+namespace trnr {
 
 // a generic midi synth base class with sample accurate event handling.
 template <typename t_voice>

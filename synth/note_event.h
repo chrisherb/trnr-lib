@@ -1,6 +1,6 @@
 #pragma once
 
-namespace trnr::lib::synth {
+namespace trnr {
 
 enum note_event_type {
     note_on = 0,

@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 
-namespace trnr::lib::synth {
+namespace trnr {
 
 enum env_state {
     idle = 0,
