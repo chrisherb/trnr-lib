@@ -20,6 +20,7 @@ public:
     bool trigger = false;
     int midi_note = 0;
     float velocity = 1.f;
+    float pitch_mod = 0.f;
 
     int algorithm;
     float pitch_env_amt;
@@ -44,7 +45,7 @@ public:
 
     float process_sample() {
         float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
-        float pitched_freq = midi_to_frequency(midi_note) + pitch_env_signal;
+        float pitched_freq = midi_to_frequency(midi_note) + pitch_env_signal + pitch_mod;
 
         float output = 0.f;
 
