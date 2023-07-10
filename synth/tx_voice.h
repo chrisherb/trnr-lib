@@ -50,7 +50,7 @@ public:
 
     float process_sample() {
         float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
-        float pitched_freq = midi_to_frequency(midi_note + pitch_mod) + pitch_env_signal + additional_pitch_mod;
+        float pitched_freq = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod) + pitch_env_signal;
 
         float output = 0.f;
 
