@@ -2,11 +2,12 @@
 #include "tx_sineosc.h"
 #include "tx_envelope.h"
 #include "tx_operator.h"
+#include "ivoice.h"
 #include "../util/audio_math.h"
 
 namespace trnr {
 
-class tx_voice {
+class tx_voice : public ivoice {
 public:
     tx_voice() 
         : algorithm { 0 }
@@ -32,23 +33,23 @@ public:
     tx_operator op2;
     tx_operator op3;
 
-    void note_on(int _note, float _velocity) {
+    void note_on(int _note, float _velocity) override {
         this->gate = true;
         this->trigger = true;
         midi_note = _note;
         velocity = _velocity;
     }
 
-    void note_off() {
+    void note_off() override {
         this->gate = false;
     }
 
     // modulates the pitch in semitones
-    void modulate_pitch(float pitch) {
-        this->pitch_mod = pitch;
+    void modulate_pitch(float _pitch) override {
+        this->pitch_mod = _pitch;
     }
 
-    float process_sample() {
+    float process_sample() override {
         float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
         float pitched_freq = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod) + pitch_env_signal;
 
@@ -79,9 +80,9 @@ public:
         return redux(output, bit_resolution);
     }
 
-    bool is_busy() { return gate || op1.envelope.is_busy() || op2.envelope.is_busy() || op3.envelope.is_busy(); }
+    bool is_busy() override { return gate || op1.envelope.is_busy() || op2.envelope.is_busy() || op3.envelope.is_busy(); }
 
-    void set_samplerate(double samplerate) {
+    void set_samplerate(double samplerate) override {
         pitch_env.set_samplerate(samplerate);
         feedback_osc.set_samplerate(samplerate);
         op1.set_samplerate(samplerate);

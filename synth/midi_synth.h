@@ -1,18 +1,22 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include "ivoice.h"
 #include "midi_event.h"
 #include "voice_allocator.h"
 
 namespace trnr {
 
 // a generic midi synth base class with sample accurate event handling.
+// the templated type t_voice must derive from ivoice
 template <typename t_voice>
 class midi_synth : public voice_allocator<t_voice> {
 public:
     midi_synth(int _n_voices)
         : m_voices_active { false }
     {
+        // checks whether template derives from ivoice
+        typedef t_voice assert_at_compile_time[is_convertible<t_voice>::value ? 1 : -1];
     }
 
     void set_samplerate_blocksize(double _samplerate, int _block_size)

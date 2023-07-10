@@ -1,5 +1,6 @@
 #pragma once
 #include "midi_event.h"
+#include "ivoice.h"
 #include <vector>
 
 namespace trnr {
@@ -12,6 +13,8 @@ public:
     voice_allocator()
         : voices(8, t_voice())
     {
+        // checks whether template derives from ivoice
+        typedef t_voice assert_at_compile_time[is_convertible<t_voice>::value ? 1 : -1];
     }
 
     void set_voice_count(const int& voice_count)
