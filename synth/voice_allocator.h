@@ -1,6 +1,6 @@
 #pragma once
+#include "midi_event.h"
 #include <vector>
-#include "note_event.h"
 
 namespace trnr {
 
@@ -8,7 +8,7 @@ template <typename t_voice>
 class voice_allocator {
 public:
     std::vector<t_voice> voices;
-    
+
     voice_allocator()
         : voices(8, t_voice())
     {
@@ -19,7 +19,7 @@ public:
         voices.resize(voice_count, voices.at(0));
     }
 
-    void note_on(const note_event& event)
+    void note_on(const midi_event& event)
     {
         t_voice* voice = get_free_voice(event.midi_note);
 
@@ -32,7 +32,7 @@ public:
         }
     }
 
-    void note_off(const note_event& event)
+    void note_off(const midi_event& event)
     {
         for (auto it = voices.begin(); it != voices.end(); it++) {
             if ((*it).midi_note == event.midi_note) {
@@ -63,7 +63,7 @@ public:
         }
     }
 
-    void add_event(note_event event)
+    void add_event(midi_event event)
     {
         input_queue.push_back(event);
     }
@@ -88,7 +88,7 @@ public:
     }
 
 private:
-    std::vector<note_event> input_queue;
+    std::vector<midi_event> input_queue;
 
     t_voice* get_free_voice(float frequency)
     {
@@ -126,15 +126,20 @@ private:
         auto iterator = input_queue.begin();
         while (iterator != input_queue.end()) {
 
-            note_event& event = *iterator;
+            midi_event& event = *iterator;
             if (event.offset == _start_index) {
 
                 switch (event.type) {
-                case note_event_type::note_on:
+                case midi_event_type::note_on:
                     note_on(event);
                     break;
-                case note_event_type::note_off:
+                case midi_event_type::note_off:
                     note_off(event);
+                    break;
+                case midi_event_type::pitch_wheel:
+                    access([&event](t_voice& voice) { voice.pitch_mod = event.data; });
+                    break;
+                default:
                     break;
                 }
 

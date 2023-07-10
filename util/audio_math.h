@@ -9,7 +9,7 @@ namespace trnr {
 		return pow(10, db/20);
 	}
 
-	static inline float midi_to_frequency(int midi_note) {
+	static inline float midi_to_frequency(float midi_note) {
 			return 440.0 * powf(2.0, ((float)midi_note - 69.0) / 12.0);
 	}
 }

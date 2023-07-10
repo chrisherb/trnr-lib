@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include "note_event.h"
+#include "midi_event.h"
 #include "voice_allocator.h"
 
 namespace trnr {
@@ -35,7 +35,7 @@ public:
                     block_size = samples_remaining;
 
                 while (!m_event_queue.empty()) {
-                    note_event event = m_event_queue.front();
+                    midi_event event = m_event_queue.front();
 
                     // we assume the messages are in chronological order. If we find one later than the current block we are done.
                     if (event.offset > start_index + block_size)
@@ -66,9 +66,9 @@ public:
         }
     }
     
-    void add_event(note_event event)
+    void add_event(midi_event event)
     {
-        if (event.type == note_event_type::note_on)
+        if (event.type == midi_event_type::note_on)
             m_voices_active = true;
 
         m_event_queue.push_back(event);
@@ -82,7 +82,7 @@ public:
     }
 
 private:
-    std::vector<note_event> m_event_queue;
+    std::vector<midi_event> m_event_queue;
     int m_block_size;
     bool m_voices_active;
 };
