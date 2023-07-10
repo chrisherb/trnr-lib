@@ -20,8 +20,7 @@ public:
     bool trigger = false;
     int midi_note = 0;
     float velocity = 1.f;
-    float pitch_mod = 0.f; // modulates pitch in semi-tones
-    float pitch_mod2 = 0.f; // modulates pitch in frequency
+    float additional_pitch_mod = 0.f; // modulates pitch in frequency
 
     int algorithm;
     float pitch_env_amt;
@@ -44,9 +43,14 @@ public:
         this->gate = false;
     }
 
+    // modulates the pitch in semitones
+    void modulate_pitch(float pitch) {
+        this->pitch_mod = pitch;
+    }
+
     float process_sample() {
         float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
-        float pitched_freq = midi_to_frequency(midi_note + pitch_mod) + pitch_env_signal + pitch_mod2;
+        float pitched_freq = midi_to_frequency(midi_note + pitch_mod) + pitch_env_signal + additional_pitch_mod;
 
         float output = 0.f;
 
@@ -94,6 +98,7 @@ public:
 
 private:
     const float MOD_INDEX_COEFF = 4.f;
+    float pitch_mod = 0.f; // modulates pitch in semi-tones
 
     float calc_algo1(const float frequency) {
         float fb_freq = frequency * op3.ratio;

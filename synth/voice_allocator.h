@@ -137,7 +137,7 @@ private:
                     note_off(event);
                     break;
                 case midi_event_type::pitch_wheel:
-                    access([&event](t_voice& voice) { voice.pitch_mod = event.data; });
+                    access([&event](t_voice& voice) { voice.modulate_pitch(event.data); });
                     break;
                 default:
                     break;
