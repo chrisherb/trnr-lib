@@ -1,9 +1,9 @@
 #pragma once
-#include <memory>
-#include <vector>
 #include "ivoice.h"
 #include "midi_event.h"
 #include "voice_allocator.h"
+#include <memory>
+#include <vector>
 
 namespace trnr {
 
@@ -69,7 +69,7 @@ public:
             }
         }
     }
-    
+
     void add_event(midi_event event)
     {
         if (event.type == midi_event_type::note_on)

@@ -1,6 +1,6 @@
 #pragma once
-#include "midi_event.h"
 #include "ivoice.h"
+#include "midi_event.h"
 #include <vector>
 
 namespace trnr {
