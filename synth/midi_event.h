@@ -33,13 +33,13 @@ public:
         offset = _offset;
     }
 
-    void make_pitch_weel(double _pitch, int _offset = 0)
+    void make_pitch_wheel(double _pitch, int _offset = 0)
     {
         type = midi_event_type::pitch_wheel;
         data = _pitch;
     }
 
-    void make_mod_weel(double _mod, int _offset = 0)
+    void make_mod_wheel(double _mod, int _offset = 0)
     {
         type = midi_event_type::pitch_wheel;
         data = _mod;
