@@ -1,3 +1,5 @@
+#pragma once
+
 #include <math.h>
 
 namespace trnr {
@@ -10,6 +12,6 @@ namespace trnr {
 	}
 
 	static inline float midi_to_frequency(float midi_note) {
-			return 440.0 * powf(2.0, ((float)midi_note - 69.0) / 12.0);
+		return 440.0 * powf(2.0, ((float)midi_note - 69.0) / 12.0);
 	}
 }
