@@ -9,8 +9,8 @@ namespace trnr {
 
 // a generic midi synth base class with sample accurate event handling.
 // the templated type t_voice must derive from ivoice
-template <typename t_voice>
-class midi_synth : public voice_allocator<t_voice> {
+template <typename t_voice, typename t_sample>
+class midi_synth : public voice_allocator<t_voice, t_sample> {
 public:
     midi_synth(int _n_voices)
         : m_voices_active { false }
@@ -22,10 +22,10 @@ public:
     void set_samplerate_blocksize(double _samplerate, int _block_size)
     {
         m_block_size = _block_size;
-        voice_allocator<t_voice>::set_samplerate(_samplerate);
+        voice_allocator<t_voice, t_sample>::set_samplerate(_samplerate);
     }
 
-    void process_block(double** _outputs, int _n_frames)
+    void process_block(t_sample** _outputs, int _n_frames)
     {
         // sample accurate event handling based on the iPlug2 synth by Oli Larkin
         if (m_voices_active || !m_event_queue.empty()) {
@@ -48,18 +48,18 @@ public:
                     // send performance messages to the voice allocator
                     // message offset is relative to the start of this process_samples() block
                     event.offset -= start_index;
-                    voice_allocator<t_voice>::add_event(event);
+                    voice_allocator<t_voice, t_sample>::add_event(event);
 
                     m_event_queue.erase(m_event_queue.begin());
                 }
 
-                voice_allocator<t_voice>::process_samples(_outputs, start_index, block_size);
+                voice_allocator<t_voice, t_sample>::process_samples(_outputs, start_index, block_size);
 
                 samples_remaining -= block_size;
                 start_index += block_size;
             }
 
-            m_voices_active = voice_allocator<t_voice>::voices_active();
+            m_voices_active = voice_allocator<t_voice, t_sample>::voices_active();
 
             flush_event_queue(_n_frames);
         } else {

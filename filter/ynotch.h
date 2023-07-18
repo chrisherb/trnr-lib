@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 
+template <typename t_sample>
 namespace trnr {
 // Notch filter based on YNotch by Chris Johnson
 class ynotch {
@@ -70,7 +71,7 @@ public:
     {
         F = value;
     }
-    void processblock(double** inputs, double** outputs, int blockSize)
+    void processblock(t_sample** inputs, t_sample** outputs, int blockSize)
     {
         double* in1 = inputs[0];
         double* in2 = inputs[1];

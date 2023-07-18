@@ -5,7 +5,7 @@
 
 namespace trnr {
 
-template <typename t_voice>
+template <typename t_voice, typename t_sample>
 class voice_allocator {
 public:
     std::vector<t_voice> voices;
@@ -49,7 +49,7 @@ public:
         std::for_each(voices.begin(), voices.end(), f);
     }
 
-    void process_samples(double** _outputs, int _start_index, int _block_size)
+    void process_samples(t_sample** _outputs, int _start_index, int _block_size)
     {
         for (int s = _start_index; s < _start_index + _block_size; s++) {
 

@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace trnr {
+template <typename t_sample>
 // Lowpass filter based on YLowpass by Chris Johnson
 class ylowpass {
 public:
@@ -70,12 +71,12 @@ public:
     {
         F = value;
     }
-    void processblock(double** inputs, double** outputs, int blockSize)
+    void processblock(t_sample** inputs, t_sample** outputs, int blockSize)
     {
-        double* in1 = inputs[0];
-		double* in2 = inputs[1];
-		double* out1 = outputs[0];
-		double* out2 = outputs[1];
+        t_sample* in1 = inputs[0];
+		t_sample* in2 = inputs[1];
+		t_sample* out1 = outputs[0];
+		t_sample* out2 = outputs[1];
 
         int inFramesToProcess = blockSize;
         double overallscale = 1.0;

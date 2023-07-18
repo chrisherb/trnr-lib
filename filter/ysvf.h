@@ -5,6 +5,7 @@
 #include "ynotch.h"
 
 namespace trnr {
+template <typename t_sample>
 
 enum filter_types {
     lowpass = 0,
@@ -75,7 +76,7 @@ public:
         notch.set_mix(value);
     }
 
-    void process_block(double** inputs, double** outputs, int block_size) {
+    void process_block(t_sample** inputs, t_sample** outputs, int block_size) {
 
         switch (filter_type) {
             case filter_types::lowpass:

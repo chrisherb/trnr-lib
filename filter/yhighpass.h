@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace trnr {
+template <typename t_sample>
 // Highpass filter based on YHighpass by Chris Johnson
 class yhighpass {
 public:
@@ -70,7 +71,7 @@ public:
     {
         F = value;
     }
-    void processblock(double** inputs, double** outputs, int blockSize)
+    void processblock(t_sample** inputs, t_sample** outputs, int blockSize)
     {
         double* in1 = inputs[0];
         double* in2 = inputs[1];
