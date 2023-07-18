@@ -22,7 +22,7 @@ public:
     void set_samplerate_blocksize(double _samplerate, int _block_size)
     {
         m_block_size = _block_size;
-        voice_allocator::set_samplerate(_samplerate);
+        voice_allocator<t_voice>::set_samplerate(_samplerate);
     }
 
     void process_block(double** _outputs, int _n_frames)
@@ -48,18 +48,18 @@ public:
                     // send performance messages to the voice allocator
                     // message offset is relative to the start of this process_samples() block
                     event.offset -= start_index;
-                    voice_allocator::add_event(event);
+                    voice_allocator<t_voice>::add_event(event);
 
                     m_event_queue.erase(m_event_queue.begin());
                 }
 
-                voice_allocator::process_samples(_outputs, start_index, block_size);
+                voice_allocator<t_voice>::process_samples(_outputs, start_index, block_size);
 
                 samples_remaining -= block_size;
                 start_index += block_size;
             }
 
-            m_voices_active = voice_allocator::voices_active();
+            m_voices_active = voice_allocator<t_voice>::voices_active();
 
             flush_event_queue(_n_frames);
         } else {
