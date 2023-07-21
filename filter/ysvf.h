@@ -5,7 +5,6 @@
 #include "ynotch.h"
 
 namespace trnr {
-template <typename t_sample>
 
 enum filter_types {
     lowpass = 0,
@@ -14,6 +13,7 @@ enum filter_types {
     notch
 };
 
+template <typename t_sample>
 class ysvf {
 public:
     ysvf(double _samplerate)

@@ -4,8 +4,8 @@
 #include <array>
 #include <vector>
 
-template <typename t_sample>
 namespace trnr {
+template <typename t_sample>
 // Notch filter based on YNotch by Chris Johnson
 class ynotch {
 public:
