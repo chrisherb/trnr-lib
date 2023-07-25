@@ -73,10 +73,10 @@ public:
     }
     void processblock(t_sample** inputs, t_sample** outputs, int blockSize)
     {
-        double* in1 = inputs[0];
-        double* in2 = inputs[1];
-        double* out1 = outputs[0];
-        double* out2 = outputs[1];
+        t_sample* in1 = inputs[0];
+        t_sample* in2 = inputs[1];
+        t_sample* out1 = outputs[0];
+        t_sample* out2 = outputs[1];
 
         int inFramesToProcess = blockSize;
         double overallscale = 1.0;
