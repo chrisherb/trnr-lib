@@ -16,7 +16,7 @@ enum filter_types {
 template <typename t_sample>
 class ysvf {
 public:
-    ysvf(double _samplerate)
+    ysvf(double _samplerate = 44100)
         : lowpass { _samplerate }
         , highpass { _samplerate }
         , bandpass { _samplerate }
