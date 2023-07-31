@@ -64,7 +64,7 @@ public:
                 // get sample for each channel
                 output_l = get_sample((size_t)quantized_index, 0);
                 if (m_channel_count > 0) {
-                    output_r = get_sample(wrap(quantized_index + calc_jitter(_mod.jitter), m_buffer_size), 1);
+                    output_r = get_sample((size_t)wrap(quantized_index + calc_jitter(_mod.jitter), m_buffer_size), 1);
                 } else {
                     output_r = output_l;
                 }
