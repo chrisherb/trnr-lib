@@ -94,7 +94,6 @@ public:
 
             _outputs[0][i] = output_l;
             _outputs[1][i] = output_r;
-            _outputs[2][i] = (double)_mod.end;
         }
     }
 
