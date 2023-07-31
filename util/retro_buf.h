@@ -62,9 +62,9 @@ public:
                 size_t quantized_index = static_cast<size_t>(static_cast<size_t>(m_playback_pos / samplerate_divisor) * samplerate_divisor);
 
                 // get sample for each channel
-                output_l = get_sample((size_t)quantized_index, 0);
+                output_l = get_sample((size_t)wrap(quantized_index + jitterize(_mod.jitter), m_buffer_size), 0);
                 if (m_channel_count > 0) {
-                    output_r = get_sample((size_t)wrap(quantized_index + calc_jitter(_mod.jitter), m_buffer_size), 1);
+                    output_r = get_sample((size_t)wrap(quantized_index + jitterize(_mod.jitter), m_buffer_size), 1);
                 } else {
                     output_r = output_l;
                 }
@@ -132,7 +132,7 @@ private:
         return value;
     }
 
-    int calc_jitter(int jitter) {
+    int jitterize(int jitter) {
         if (jitter > 0) {
             return static_cast<int>(rand() % jitter);
         } else {
