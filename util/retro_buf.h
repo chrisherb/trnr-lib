@@ -76,7 +76,7 @@ public:
                 reduce_bitrate(output_l, output_r, _mod.bitrate);
 
                 // calculate imaging filter frequency + deviation
-                double filter_frequency = ((_mod.samplerate / 2) * note_ratio) * _mod.deviation;
+                double filter_frequency = ((_mod.samplerate / 2) * note_ratio) * ((_mod.deviation * 9) + 1);
 
                 m_imaging_filter_l.process_sample(output_l, filter_frequency);
                 m_imaging_filter_r.process_sample(output_r, filter_frequency);
