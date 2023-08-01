@@ -46,7 +46,8 @@ public:
         }
     }
 
-    void process_block(double** _outputs, size_t _block_size, retro_buf_modulation _mod) {
+    // @return is active
+    bool process_block(double** _outputs, size_t _block_size, retro_buf_modulation _mod) {
 
         m_modulation = _mod;
 
@@ -95,6 +96,8 @@ public:
             _outputs[0][i] = output_l;
             _outputs[1][i] = output_r;
         }
+
+        return m_playback_pos > -1;
     }
 
     virtual float get_sample(size_t _index, size_t _channel) = 0;
