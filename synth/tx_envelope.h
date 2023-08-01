@@ -30,7 +30,7 @@ public:
     float release1_level;
     float release2_rate;
 
-    tx_envelope()
+    tx_envelope(bool _retrigger = false)
         : samplerate { 44100. }
         , attack1_rate { 0 }
         , attack1_level { 0 }
@@ -50,6 +50,7 @@ public:
         , h1 { 0. }
         , h2 { 0. }
         , h3 { 0. }
+        , retrigger { _retrigger }
     {
     }
 
@@ -65,7 +66,10 @@ public:
 
         // if note on is triggered, transition to attack phase
         if (trigger) {
-            start_level = level;
+            if (retrigger) 
+                start_level = 0.f;
+            else
+                start_level = level;
             phase = 0;
             state = attack1;
         }
@@ -264,6 +268,7 @@ private:
     float h1;
     float h2;
     float h3;
+    bool retrigger;
 
     float lerp(float x1, float y1, float x2, float y2, float x) { return y1 + (((x - x1) * (y2 - y1)) / (x2 - x1)); }
 
