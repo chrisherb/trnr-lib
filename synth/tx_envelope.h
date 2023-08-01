@@ -29,6 +29,7 @@ struct env_params {
     float release2_rate;
 };
 
+template <typename t_sample>
 class tx_envelope {
 public:
     env_state state;
@@ -48,13 +49,18 @@ public:
 
     float process_sample(bool gate, bool trigger, env_params& _params) {
 
-        int attack_mid_x1 = (int)ms_to_samples(_params.attack1_rate);
-        int attack_mid_x2 = (int)ms_to_samples(_params.attack2_rate);
-        int hold_samp = (int)ms_to_samples(_params.hold_rate);
-        int decay_mid_x1 = (int)ms_to_samples(_params.decay1_rate);
-        int decay_mid_x2 = (int)ms_to_samples(_params.decay2_rate);
-        int release_mid_x1 = (int)ms_to_samples(_params.release1_rate);
-        int release_mid_x2 = (int)ms_to_samples(_params.release2_rate);
+        return process_sample(gate, trigger, _params, 0, 0);
+    }
+
+    float process_sample(bool gate, bool trigger, env_params& _params, t_sample _attack_mod, t_sample _decay_mod) {
+
+        size_t attack_mid_x1 = ms_to_samples(_params.attack1_rate + (float)_attack_mod);
+        size_t attack_mid_x2 = ms_to_samples(_params.attack2_rate + (float)_attack_mod);
+        size_t hold_samp = ms_to_samples(_params.hold_rate);
+        size_t decay_mid_x1 = ms_to_samples(_params.decay1_rate + (float)_decay_mod);
+        size_t decay_mid_x2 = ms_to_samples(_params.decay2_rate + (float)_decay_mod);
+        size_t release_mid_x1 = ms_to_samples(_params.release1_rate + (float)_decay_mod);
+        size_t release_mid_x2 = ms_to_samples(_params.release2_rate + (float)_decay_mod);
 
         // if note on is triggered, transition to attack phase
         if (trigger) {
@@ -254,7 +260,7 @@ public:
     
 private:
     double samplerate;
-    int phase;
+    size_t phase;
     float level;
     float start_level;
     float h1;
@@ -272,6 +278,8 @@ private:
         return (h1 + h2 + h3) / 3.f;
     }
 
-    float ms_to_samples(float ms) { return ms * (float)samplerate / 1000.f; }
+    size_t ms_to_samples(float ms) { 
+        return static_cast<size_t>(ms * samplerate / 1000.f);
+    }
 };
 }
