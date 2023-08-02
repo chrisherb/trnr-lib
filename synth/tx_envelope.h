@@ -205,36 +205,40 @@ public:
     }
 
     // converts the x/y coordinates of the envelope points as a list for graphical representation.
-    std::array<float, 18> calc_coordinates(env_params _params) {
+    std::array<float, 18> calc_coordinates(env_params _params, float _max_attack, float _max_decay, float _max_release) {
+
+        auto scale = [](float _value, float _max) {
+            return powf(_value / _max, 0.25) * _max;
+        };
 
         float a_x = 0;
         float a_y = 0;
 
-        float b_x = _params.attack1_rate;
+        float b_x = scale(_params.attack1_rate, _max_attack / 2);
         float b_y = _params.attack1_level;
 
-        float c_x = b_x + _params.attack2_rate;
+        float c_x = b_x + scale(_params.attack2_rate, _max_attack / 2);
         float c_y = 1;
 
         float d_x = c_x + _params.hold_rate;
         float d_y = 1;
         
-        float e_x = d_x + _params.decay1_rate;
+        float e_x = d_x + scale(_params.decay1_rate, _max_decay / 2);
         float e_y = _params.decay1_level;
 
-        float f_x = e_x + _params.decay2_rate;
+        float f_x = e_x + scale(_params.decay2_rate, _max_decay / 2);
         float f_y = _params.sustain_level;
 
-        float g_x = f_x + 125;
+        float g_x = _max_attack + _max_decay;
         float g_y = _params.sustain_level;
 
-        float h_x = g_x + _params.release1_rate;
+        float h_x = g_x + scale(_params.release1_rate, _max_decay / 2);
         float h_y = _params.release1_level;
 
-        float i_x = h_x + _params.release2_rate;
+        float i_x = h_x + scale(_params.release2_rate, _max_decay / 2);
         float i_y = 0;
 
-        float total = i_x;
+        float total = _max_attack + _max_decay + _max_release;
 
         return {
             a_x,
