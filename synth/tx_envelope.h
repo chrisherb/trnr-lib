@@ -17,29 +17,21 @@ enum env_state {
 
 class tx_envelope {
 public:
-    env_state state;
-    float attack1_rate;
-    float attack1_level;
-    float attack2_rate;
-    float hold_rate;
-    float decay1_rate;
-    float decay1_level;
-    float decay2_rate;
-    float sustain_level;
-    float release1_rate;
-    float release1_level;
-    float release2_rate;
+    env_state state = idle;
+    float attack1_rate = 0;
+    float attack1_level = 0;
+    float attack2_rate = 0;
+    float hold_rate = 0;
+    float decay1_rate = 0;
+    float decay1_level = 0;
+    float decay2_rate = 0;
+    float sustain_level = 0;
+    float release1_rate = 0;
+    float release1_level = 0;
+    float release2_rate = 0;
 
     tx_envelope(bool _retrigger = false)
-        : samplerate { 44100. }
-        , level { 0.f }
-        , phase { 0 }
-        , state { idle }
-        , start_level { 0.f }
-        , h1 { 0. }
-        , h2 { 0. }
-        , h3 { 0. }
-        , retrigger { _retrigger }
+        : retrigger { _retrigger }
     {
     }
 
@@ -260,13 +252,13 @@ public:
     }
     
 private:
-    double samplerate;
-    size_t phase;
-    float level;
-    float start_level;
-    float h1;
-    float h2;
-    float h3;
+    double samplerate = 44100.;
+    size_t phase = 0;
+    float level = 0.f;
+    float start_level = 0.f;
+    float h1 = 0.f;
+    float h2 = 0.f;
+    float h3 = 0.f;
     bool retrigger;
 
     float lerp(float x1, float y1, float x2, float y2, float x) { return y1 + (((x - x1) * (y2 - y1)) / (x2 - x1)); }
