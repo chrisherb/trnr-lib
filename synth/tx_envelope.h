@@ -15,7 +15,9 @@ enum env_state {
     release2
 };
 
-struct env_params {
+class tx_envelope {
+public:
+    env_state state;
     float attack1_rate;
     float attack1_level;
     float attack2_rate;
@@ -27,12 +29,6 @@ struct env_params {
     float release1_rate;
     float release1_level;
     float release2_rate;
-};
-
-template <typename t_sample>
-class tx_envelope {
-public:
-    env_state state;
 
     tx_envelope(bool _retrigger = false)
         : samplerate { 44100. }
@@ -47,20 +43,21 @@ public:
     {
     }
 
-    float process_sample(bool gate, bool trigger, env_params& _params) {
+    float process_sample(bool gate, bool trigger) {
 
-        return process_sample(gate, trigger, _params, 0, 0);
+        return process_sample<float>(gate, trigger, 0, 0);
     }
 
-    float process_sample(bool gate, bool trigger, env_params& _params, t_sample _attack_mod, t_sample _decay_mod) {
+    template <typename t_sample>
+    float process_sample(bool gate, bool trigger, t_sample _attack_mod, t_sample _decay_mod) {
 
-        size_t attack_mid_x1 = ms_to_samples(_params.attack1_rate + (float)_attack_mod);
-        size_t attack_mid_x2 = ms_to_samples(_params.attack2_rate + (float)_attack_mod);
-        size_t hold_samp = ms_to_samples(_params.hold_rate);
-        size_t decay_mid_x1 = ms_to_samples(_params.decay1_rate + (float)_decay_mod);
-        size_t decay_mid_x2 = ms_to_samples(_params.decay2_rate + (float)_decay_mod);
-        size_t release_mid_x1 = ms_to_samples(_params.release1_rate + (float)_decay_mod);
-        size_t release_mid_x2 = ms_to_samples(_params.release2_rate + (float)_decay_mod);
+        size_t attack_mid_x1 = ms_to_samples(attack1_rate + (float)_attack_mod);
+        size_t attack_mid_x2 = ms_to_samples(attack2_rate + (float)_attack_mod);
+        size_t hold_samp = ms_to_samples(hold_rate);
+        size_t decay_mid_x1 = ms_to_samples(decay1_rate + (float)_decay_mod);
+        size_t decay_mid_x2 = ms_to_samples(decay2_rate + (float)_decay_mod);
+        size_t release_mid_x1 = ms_to_samples(release1_rate + (float)_decay_mod);
+        size_t release_mid_x2 = ms_to_samples(release2_rate + (float)_decay_mod);
 
         // if note on is triggered, transition to attack phase
         if (trigger) {
@@ -75,7 +72,7 @@ public:
         if (state == attack1) {
             // while in attack phase
             if (phase < attack_mid_x1) {
-                level = lerp(0, start_level, (float)attack_mid_x1, _params.attack1_level, (float)phase);
+                level = lerp(0, start_level, (float)attack_mid_x1, attack1_level, (float)phase);
                 phase += 1;
             }
             // reset phase if parameter was changed
@@ -92,7 +89,7 @@ public:
         if (state == attack2) {
             // while in attack phase
             if (phase < attack_mid_x2) {
-                level = lerp(0, _params.attack1_level, (float)attack_mid_x2, 1, (float)phase);
+                level = lerp(0, attack1_level, (float)attack_mid_x2, 1, (float)phase);
                 phase += 1;
             }
             // reset phase if parameter was changed
@@ -123,7 +120,7 @@ public:
         if (state == decay1) {
             // while in decay phase
             if (phase < decay_mid_x1) {
-                level = lerp(0, 1, (float)decay_mid_x1, _params.decay1_level, (float)phase);
+                level = lerp(0, 1, (float)decay_mid_x1, decay1_level, (float)phase);
                 phase += 1;
             }
             // reset phase if parameter was changed
@@ -140,7 +137,7 @@ public:
         if (state == decay2) {
             // while in decay phase
             if (phase < decay_mid_x2) {
-                level = lerp(0, _params.decay1_level, (float)decay_mid_x2, _params.sustain_level, (float)phase);
+                level = lerp(0, decay1_level, (float)decay_mid_x2, sustain_level, (float)phase);
                 phase += 1;
             }
             // reset phase if parameter was changed
@@ -151,19 +148,19 @@ public:
             if (phase == decay_mid_x2) {
                 state = sustain;
                 phase = 0;
-                level = _params.sustain_level;
+                level = sustain_level;
             }
         }
         // while sustain phase: if note off is triggered, transition to release phase
         if (state == sustain && !gate) {
             state = release1;
-            level = _params.sustain_level;
+            level = sustain_level;
         }
         // release 1st half
         if (state == release1) {
             // while in release phase
             if (phase < release_mid_x1) {
-                level = lerp(0, _params.sustain_level, (float)release_mid_x1, _params.release1_level, (float)phase);
+                level = lerp(0, sustain_level, (float)release_mid_x1, release1_level, (float)phase);
                 phase += 1;
             }
             // reset phase if parameter was changed
@@ -180,7 +177,7 @@ public:
         if (state == release2) {
             // while in release phase
             if (phase < release_mid_x2) {
-                level = lerp(0, _params.release1_level, (float)release_mid_x2, 0, (float)phase);
+                level = lerp(0, release1_level, (float)release_mid_x2, 0, (float)phase);
                 phase += 1;
             }
             // reset phase if parameter was changed
@@ -205,7 +202,7 @@ public:
     }
 
     // converts the x/y coordinates of the envelope points as a list for graphical representation.
-    std::array<float, 18> calc_coordinates(env_params _params, float _max_attack, float _max_decay, float _max_release) {
+    std::array<float, 18> calc_coordinates(float _max_attack, float _max_decay, float _max_release) {
 
         auto scale = [](float _value, float _max) {
             return powf(_value / _max, 0.25) * _max;
@@ -214,28 +211,28 @@ public:
         float a_x = 0;
         float a_y = 0;
 
-        float b_x = scale(_params.attack1_rate, _max_attack / 2);
-        float b_y = _params.attack1_level;
+        float b_x = scale(attack1_rate, _max_attack / 2);
+        float b_y = attack1_level;
 
-        float c_x = b_x + scale(_params.attack2_rate, _max_attack / 2);
+        float c_x = b_x + scale(attack2_rate, _max_attack / 2);
         float c_y = 1;
 
-        float d_x = c_x + _params.hold_rate;
+        float d_x = c_x + hold_rate;
         float d_y = 1;
         
-        float e_x = d_x + scale(_params.decay1_rate, _max_decay / 2);
-        float e_y = _params.decay1_level;
+        float e_x = d_x + scale(decay1_rate, _max_decay / 2);
+        float e_y = decay1_level;
 
-        float f_x = e_x + scale(_params.decay2_rate, _max_decay / 2);
-        float f_y = _params.sustain_level;
+        float f_x = e_x + scale(decay2_rate, _max_decay / 2);
+        float f_y = sustain_level;
 
         float g_x = _max_attack + _max_decay;
-        float g_y = _params.sustain_level;
+        float g_y = sustain_level;
 
-        float h_x = g_x + scale(_params.release1_rate, _max_decay / 2);
-        float h_y = _params.release1_level;
+        float h_x = g_x + scale(release1_rate, _max_decay / 2);
+        float h_y = release1_level;
 
-        float i_x = h_x + scale(_params.release2_rate, _max_decay / 2);
+        float i_x = h_x + scale(release2_rate, _max_decay / 2);
         float i_y = 0;
 
         float total = _max_attack + _max_decay + _max_release;
