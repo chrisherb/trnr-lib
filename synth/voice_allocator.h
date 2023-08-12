@@ -11,7 +11,7 @@ public:
     std::vector<t_voice> voices;
 
     voice_allocator()
-        : voices(8, t_voice())
+        : voices(4, t_voice())
     {
         // checks whether template derives from ivoice
         typedef t_voice assert_at_compile_time[is_convertible<t_voice>::value ? 1 : -1];
@@ -92,6 +92,7 @@ public:
 
 private:
     std::vector<midi_event> input_queue;
+    int index_to_steal = 0;
 
     t_voice* get_free_voice(float frequency)
     {
@@ -118,7 +119,13 @@ private:
         }
 
         if (free_voice == nullptr) {
-            free_voice = &voices.at(0);
+            free_voice = &voices.at(index_to_steal);
+            
+            if (index_to_steal < voices.size() - 1) {
+                index_to_steal++;
+            } else {
+                index_to_steal = 0;
+            }
         }
 
         return free_voice;

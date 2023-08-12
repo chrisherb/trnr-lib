@@ -16,7 +16,7 @@ enum filter_types {
 template <typename t_sample>
 class ysvf {
 public:
-    ysvf(double _samplerate)
+    ysvf(double _samplerate = 44100)
         : lowpass { _samplerate }
         , highpass { _samplerate }
         , bandpass { _samplerate }
@@ -96,10 +96,10 @@ public:
 
 private:
     filter_types filter_type;
-    ylowpass lowpass;
-    yhighpass highpass;
-    ybandpass bandpass;
-    ynotch notch;
+    ylowpass<t_sample> lowpass;
+    yhighpass<t_sample> highpass;
+    ybandpass<t_sample> bandpass;
+    ynotch<t_sample> notch;
 
     double clamp(double& value, double min, double max) {
         if (value < min) {
