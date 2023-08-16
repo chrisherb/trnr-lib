@@ -16,7 +16,7 @@ public:
 		: m_voices_active {false}
 	{
 		// checks whether template derives from ivoice
-		typedef t_voice assert_at_compile_time[is_convertible<t_voice>::value ? 1 : -1];
+		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 	}
 
 	void set_samplerate_blocksize(double _samplerate, int _block_size)
@@ -27,6 +27,9 @@ public:
 
 	void process_block(t_sample** _outputs, int _n_frames)
 	{
+		// clear outputs
+		for (auto i = 0; i < 2; i++) { memset(_outputs[i], 0, _n_frames * sizeof(t_sample)); }
+
 		// sample accurate event handling based on the iPlug2 synth by Oli Larkin
 		if (m_voices_active || !m_event_queue.empty()) {
 			int block_size = m_block_size;

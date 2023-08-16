@@ -7,7 +7,8 @@
 
 namespace trnr {
 
-class tx_voice : public ivoice {
+template <typename t_sample>
+class tx_voice : public ivoice<t_sample> {
 public:
 	tx_voice()
 		: algorithm {0}
@@ -46,36 +47,42 @@ public:
 	// modulates the pitch in semitones
 	void modulate_pitch(float _pitch) override { this->pitch_mod = _pitch; }
 
-	float process_sample() override
+	void process_samples(t_sample** _outputs, int _start_index, int _block_size) override
 	{
 		float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
 		float pitched_freq = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod) + pitch_env_signal;
 
-		float output = 0.f;
+		for (int s = _start_index; s < _start_index + _block_size; s++) {
 
-		// mix operator signals according to selected algorithm
-		switch (algorithm) {
-		case 0:
-			output = calc_algo1(pitched_freq);
-			break;
-		case 1:
-			output = calc_algo2(pitched_freq);
-			break;
-		case 2:
-			output = calc_algo3(pitched_freq);
-			break;
-		case 3:
-			output = calc_algo4(pitched_freq);
-			break;
-		default:
-			output = calc_algo1(pitched_freq);
-			break;
+			float output = 0.f;
+
+			// mix operator signals according to selected algorithm
+			switch (algorithm) {
+			case 0:
+				output = calc_algo1(pitched_freq);
+				break;
+			case 1:
+				output = calc_algo2(pitched_freq);
+				break;
+			case 2:
+				output = calc_algo3(pitched_freq);
+				break;
+			case 3:
+				output = calc_algo4(pitched_freq);
+				break;
+			default:
+				output = calc_algo1(pitched_freq);
+				break;
+			}
+
+			// reset trigger
+			trigger = false;
+
+			redux(output, bit_resolution);
+
+                        _outputs[0][s] += output / 3.;
+			_outputs[1][s] = _outputs[0][s];
 		}
-
-		// reset trigger
-		trigger = false;
-
-		return redux(output, bit_resolution);
 	}
 
 	bool is_busy() override

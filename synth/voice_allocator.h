@@ -14,7 +14,7 @@ public:
 		: voices(4, t_voice())
 	{
 		// checks whether template derives from ivoice
-		typedef t_voice assert_at_compile_time[is_convertible<t_voice>::value ? 1 : -1];
+		 typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 	}
 
 	void set_voice_count(const int& voice_count) { voices.resize(voice_count, voices.at(0)); }
@@ -39,17 +39,16 @@ public:
 
 	void process_samples(t_sample** _outputs, int _start_index, int _block_size)
 	{
-		for (int s = _start_index; s < _start_index + _block_size; s++) {
+		for (int b = _start_index; b < _start_index + _block_size; b += internal_block_size) {
 
-			process_events(s);
+			const int block_size = internal_block_size;
 
-			float voices_signal = 0.;
+			// process all events in the block (introduces potential inaccuracy of up to 16 samples)
+			process_events(b, block_size);
 
-			std::for_each(voices.begin(), voices.end(),
-						  [&voices_signal](t_voice& voice) { voices_signal += (voice.process_sample() / 3.); });
-
-			_outputs[0][s] = voices_signal;
-			_outputs[1][s] = voices_signal;
+			std::for_each(voices.begin(), voices.end(), [&_outputs, &b, &block_size](t_voice& voice) {
+				voice.process_samples(_outputs, b, block_size);
+			});
 		}
 	}
 
@@ -75,6 +74,7 @@ public:
 private:
 	std::vector<midi_event> input_queue;
 	int index_to_steal = 0;
+	const int internal_block_size = 16;
 
 	t_voice* get_free_voice(float frequency)
 	{
@@ -111,31 +111,33 @@ private:
 		return free_voice;
 	}
 
-	void process_events(int _start_index)
+	void process_events(int _start_index, int _block_size)
 	{
-		auto iterator = input_queue.begin();
-		while (iterator != input_queue.end()) {
+		for (int s = _start_index; s < _start_index + _block_size; s++) {
+			auto iterator = input_queue.begin();
+			while (iterator != input_queue.end()) {
 
-			midi_event& event = *iterator;
-			if (event.offset == _start_index) {
+				midi_event& event = *iterator;
+				if (event.offset == _start_index) {
 
-				switch (event.type) {
-				case midi_event_type::note_on:
-					note_on(event);
-					break;
-				case midi_event_type::note_off:
-					note_off(event);
-					break;
-				case midi_event_type::pitch_wheel:
-					access([&event](t_voice& voice) { voice.modulate_pitch(event.data); });
-					break;
-				default:
-					break;
+					switch (event.type) {
+					case midi_event_type::note_on:
+						note_on(event);
+						break;
+					case midi_event_type::note_off:
+						note_off(event);
+						break;
+					case midi_event_type::pitch_wheel:
+						access([&event](t_voice& voice) { voice.modulate_pitch(event.data); });
+						break;
+					default:
+						break;
+					}
+
+					iterator = input_queue.erase(iterator);
+				} else {
+					iterator++;
 				}
-
-				iterator = input_queue.erase(iterator);
-			} else {
-				iterator++;
 			}
 		}
 	}
