@@ -8,16 +8,18 @@ namespace trnr {
 template <typename t_voice, typename t_sample>
 class voice_allocator {
 public:
-	std::vector<t_voice> voices;
+	std::vector<t_voice*> voicePtrs;
 
 	voice_allocator()
-		: voices(4, t_voice())
+		: voicePtrs(4, new t_voice())
 	{
 		// checks whether template derives from ivoice
-		 typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
+		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
+
+		voicePtrs.reserve(8);
 	}
 
-	void set_voice_count(const int& voice_count) { voices.resize(voice_count, voices.at(0)); }
+	void set_voice_count(const int& voice_count) { voicePtrs.resize(voice_count, voicePtrs.at(0)); }
 
 	void note_on(const midi_event& event)
 	{
@@ -30,12 +32,12 @@ public:
 
 	void note_off(const midi_event& event)
 	{
-		for (auto it = voices.begin(); it != voices.end(); it++) {
-			if ((*it).midi_note == event.midi_note) { (*it).note_off(); }
+		for (t_voice* v : voicePtrs) {
+			if (v->midi_note == event.midi_note) v->note_off();
 		}
 	}
 
-	void access(std::function<void(t_voice&)> f) { std::for_each(voices.begin(), voices.end(), f); }
+	void access(std::function<void(t_voice*)> f) { std::for_each(voicePtrs.begin(), voicePtrs.end(), f); }
 
 	void process_samples(t_sample** _outputs, int _start_index, int _block_size)
 	{
@@ -46,9 +48,7 @@ public:
 			// process all events in the block (introduces potential inaccuracy of up to 16 samples)
 			process_events(b, block_size);
 
-			std::for_each(voices.begin(), voices.end(), [&_outputs, &b, &block_size](t_voice& voice) {
-				voice.process_samples(_outputs, b, block_size);
-			});
+			for (t_voice* v : voicePtrs) { v->process_samples(_outputs, b, block_size); }
 		}
 	}
 
@@ -58,8 +58,8 @@ public:
 	{
 		bool voices_active = false;
 
-		for (auto it = voices.begin(); it != voices.end(); it++) {
-			bool busy = (*it).is_busy();
+		for (t_voice* v : voicePtrs) {
+			bool busy = v->is_busy();
 			voices_active |= busy;
 		}
 
@@ -68,7 +68,7 @@ public:
 
 	void set_samplerate(double _samplerate)
 	{
-		for (int i = 0; i < voices.size(); i++) { voices.at(i).set_samplerate(_samplerate); }
+		for (t_voice* v : voicePtrs) { v->set_samplerate(_samplerate); }
 	}
 
 private:
@@ -80,8 +80,8 @@ private:
 	{
 		t_voice* voice = nullptr;
 
-		for (auto it = voices.begin(); it != voices.end(); it++) {
-			if (!(*it).is_busy()) { voice = &*it; }
+		for (t_voice* v : voicePtrs) {
+			if (!v->is_busy()) voice = v;
 		}
 
 		return voice;
@@ -91,17 +91,17 @@ private:
 	{
 		t_voice* free_voice = nullptr;
 
-		for (auto it = voices.begin(); it != voices.end(); it++) {
-			if (!(*it).gate) {
-				free_voice = &*it;
+		for (t_voice* v : voicePtrs) {
+			if (!v->gate) {
+				free_voice = v;
 				break;
 			}
 		}
 
 		if (free_voice == nullptr) {
-			free_voice = &voices.at(index_to_steal);
+			free_voice = voicePtrs.at(index_to_steal);
 
-			if (index_to_steal < voices.size() - 1) {
+			if (index_to_steal < voicePtrs.size() - 1) {
 				index_to_steal++;
 			} else {
 				index_to_steal = 0;
@@ -128,7 +128,7 @@ private:
 						note_off(event);
 						break;
 					case midi_event_type::pitch_wheel:
-						access([&event](t_voice& voice) { voice.modulate_pitch(event.data); });
+						access([&event](t_voice* voice) { voice->modulate_pitch(event.data); });
 						break;
 					default:
 						break;
