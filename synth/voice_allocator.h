@@ -22,7 +22,11 @@ public:
 	{
 		if (voice_count > voicePtrs.size()) {
 			for (int i = voicePtrs.size(); i < voice_count; ++i) {
-				voicePtrs.emplace_back(std::make_shared<t_voice>());
+				if (voicePtrs.size() > 0) {
+					voicePtrs.emplace_back(std::make_shared<t_voice>(*voicePtrs.at(0)));
+				} else {
+					voicePtrs.emplace_back(std::make_shared<t_voice>());
+				}
 			}
 		} else if (voice_count < voicePtrs.size()) {
 			voicePtrs.resize(voice_count);
