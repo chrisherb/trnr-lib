@@ -21,9 +21,18 @@ public:
 
 	void set_length(int length) { m_length = length; }
 
+	void reset()
+	{
+		m_position = 0;
+		m_position_count = 0;
+	}
+
+	int get_last_position() { return m_last_position; }
+
 	t_type process_beat()
 	{
 		t_type value = m_data[m_position];
+		m_last_position = m_position;
 
 		switch (m_direction) {
 		case forward:
@@ -40,14 +49,15 @@ public:
 
 		// calculate clock division
 		m_position_count++;
-		if (m_position_count >= m_position) { m_position_count = 0; }
+		if (m_position_count >= m_clock_division) { m_position_count = 0; }
 
 		return value;
 	}
 
 private:
-	std::array<t_type, t_max_length> m_data;
+	std::array<t_type, t_max_length> m_data = {0};
 	direction m_direction = forward;
+	int m_last_position = 0;
 	int m_position = 0;
 	int m_position_count = 0;
 	int m_clock_division = 1;
@@ -55,7 +65,6 @@ private:
 
 	void advance_position(bool _forward)
 	{
-		int increment = _forward ? 1 : -1;
 		if (m_position_count == 0) {
 			if (_forward) m_position++;
 			else m_position--;
