@@ -14,6 +14,7 @@
 
 #define OVERSAMPLING_FACTORS_VA_LIST "None", "2x", "4x", "8x", "16x"
 
+#include <assert.h>
 #include <cmath>
 #include <functional>
 
@@ -106,7 +107,7 @@ public:
 	OverSampler(const OverSampler&) = delete;
 	OverSampler& operator=(const OverSampler&) = delete;
 
-	void Reset(int blockSize = DEFAULT_BLOCK_SIZE)
+	void Reset(int blockSize = 16)
 	{
 		int numBufSamples = 1;
 
