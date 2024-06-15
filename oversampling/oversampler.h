@@ -95,10 +95,10 @@ private:
 	int current_blocksize = num_samples;
 	int required_blocksize = num_samples;
 
-	trnr::chebyshev lowpass_in1 {samplerate, 20000};
-	trnr::chebyshev lowpass_in2 {samplerate, 20000};
-	trnr::chebyshev lowpass_out1 {samplerate, 20000};
-	trnr::chebyshev lowpass_out2 {samplerate, 20000};
+	chebyshev lowpass_in1 {samplerate, 20000};
+	chebyshev lowpass_in2 {samplerate, 20000};
+	chebyshev lowpass_out1 {samplerate, 20000};
+	chebyshev lowpass_out2 {samplerate, 20000};
 
 	std::array<std::vector<float>, 2> buffer;
 
