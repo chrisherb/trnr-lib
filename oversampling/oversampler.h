@@ -77,11 +77,11 @@ public:
 		if (ratio > 1) {
 			lowpass_out1.process_block(buffer[0].data(), required_blocksize);
 			lowpass_out2.process_block(buffer[1].data(), required_blocksize);
-		}
 
-		for (int i = 0; i < num_samples; ++i) {
-			_outputs[0][i] = buffer[0][i * ratio];
-			_outputs[1][i] = buffer[1][i * ratio];
+			for (int i = 0; i < num_samples; ++i) {
+				_outputs[0][i] = buffer[0][i * ratio];
+				_outputs[1][i] = buffer[1][i * ratio];
+			}
 		}
 	}
 
