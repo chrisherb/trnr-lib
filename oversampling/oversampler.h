@@ -21,14 +21,10 @@ public:
 
 		filter_freq = _samplerate * 0.5 - 4000;
 
-		lowpass_in1.set_samplerate(samplerate);
-		lowpass_in1.set_frequency(filter_freq);
-		lowpass_in2.set_samplerate(samplerate);
-		lowpass_in2.set_frequency(filter_freq);
-		lowpass_out1.set_samplerate(samplerate);
-		lowpass_out1.set_frequency(filter_freq);
-		lowpass_out2.set_samplerate(samplerate);
-		lowpass_out2.set_frequency(filter_freq);
+		lowpass_in1.reset(samplerate, filter_freq);
+		lowpass_in2.reset(samplerate, filter_freq);
+		lowpass_out1.reset(samplerate, filter_freq);
+		lowpass_out2.reset(samplerate, filter_freq);
 
 		ratio = _ratio;
 	}
@@ -77,11 +73,11 @@ public:
 		if (ratio > 1) {
 			lowpass_out1.process_block(buffer[0].data(), required_blocksize);
 			lowpass_out2.process_block(buffer[1].data(), required_blocksize);
+		}
 
-			for (int i = 0; i < num_samples; ++i) {
-				_outputs[0][i] = buffer[0][i * ratio];
-				_outputs[1][i] = buffer[1][i * ratio];
-			}
+		for (int i = 0; i < num_samples; ++i) {
+			_outputs[0][i] = buffer[0][i * ratio];
+			_outputs[1][i] = buffer[1][i * ratio];
 		}
 	}
 

@@ -8,11 +8,7 @@ class chebyshev {
 public:
 	chebyshev() {}
 
-	chebyshev(double _samplerate, double _frequency)
-	{
-		set_samplerate(_samplerate);
-		set_frequency(_frequency);
-	}
+	chebyshev(double _samplerate, double _frequency) { reset(_samplerate, _frequency); }
 
 	void set_samplerate(double _samplerate) { samplerate = _samplerate; }
 
