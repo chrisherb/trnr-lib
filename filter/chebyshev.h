@@ -6,15 +6,20 @@
 namespace trnr {
 class chebyshev {
 public:
+	chebyshev() {}
+
+	chebyshev(double _samplerate, double _frequency)
+	{
+		set_samplerate(_samplerate);
+		set_frequency(_frequency);
+	}
+
 	void set_samplerate(double _samplerate) { samplerate = _samplerate; }
 
-	void process_sample(double& input, double frequency)
+	void set_frequency(double _frequency)
 	{
-
-		if (frequency >= 20000.f) { frequency = 20000.f; }
-
 		// First calculate the prewarped digital frequency :
-		auto K = tanf(M_PI * frequency / samplerate);
+		auto K = tanf(M_PI * _frequency / samplerate);
 
 		// Now we calc some Coefficients :
 		auto sg = sinh(passband_ripple);
@@ -44,8 +49,17 @@ public:
 		b3 = a3 * K;
 		b4 = 2 * b3;
 		b5 = b3;
+	}
 
-		// Then calculate the output as follows:
+	void reset(double _samplerate, double _frequency)
+	{
+		set_samplerate(_samplerate);
+		set_frequency(_frequency);
+	}
+
+	template <typename t_sample>
+	void process_sample(t_sample& input)
+	{
 		auto Stage1 = b0 * input + state0;
 		state0 = b1 * input + a1 * Stage1 + state1;
 		state1 = b2 * input + a2 * Stage1;
@@ -54,8 +68,28 @@ public:
 		state3 = b5 * Stage1 + a5 * input;
 	}
 
+	template <typename t_sample>
+	void process_sample(t_sample& input, double frequency)
+	{
+		set_frequency(frequency);
+
+		process_sample(input);
+	}
+
+	template <typename t_sample>
+	void process_block(t_sample* input, int blockSize)
+	{
+		t_sample output = 0;
+
+		for (int i = 0; i < blockSize; i++) {
+			output = input[i];
+			process_sample(output);
+			input[i] = output;
+		}
+	}
+
 private:
-	double samplerate = 0;
+	double samplerate = 20000;
 	double a0 = 0;
 	double a1 = 0;
 	double a2 = 0;
