@@ -15,6 +15,8 @@ public:
 		buffer[1].reserve(num_samples);
 	}
 
+	~oversampler() { delete[] ptrs; }
+
 	void init(double _samplerate, int _ratio)
 	{
 		samplerate = _samplerate * _ratio;
@@ -65,7 +67,10 @@ public:
 			}
 		}
 
-		return get_pointers();
+		ptrs[0] = buffer[0].data();
+		ptrs[1] = buffer[1].data();
+
+		return ptrs;
 	}
 
 	void downsample(float** _outputs)
@@ -97,14 +102,6 @@ private:
 	chebyshev lowpass_out2 {samplerate, 20000};
 
 	std::array<std::vector<float>, 2> buffer;
-
-	float** get_pointers()
-	{
-		float** ptrs = new float*[2];
-		ptrs[0] = buffer[0].data();
-		ptrs[1] = buffer[1].data();
-
-		return ptrs;
-	}
+	float** ptrs = new float*[2];
 };
 } // namespace trnr
