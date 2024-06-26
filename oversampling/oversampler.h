@@ -31,7 +31,8 @@ public:
 		ratio = _ratio;
 	}
 
-	float** upsample(float** _inputs, int _blocksize)
+	template<typename sample>
+	float** upsample(sample** _inputs, int _blocksize)
 	{
 		num_samples = _blocksize;
 		required_blocksize = _blocksize * ratio;
@@ -73,7 +74,8 @@ public:
 		return ptrs;
 	}
 
-	void downsample(float** _outputs)
+	template<typename sample>
+	void downsample(sample** _outputs)
 	{
 		if (ratio > 1) {
 			lowpass_out1.process_block(buffer[0].data(), required_blocksize);
