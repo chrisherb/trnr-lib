@@ -7,6 +7,7 @@
 
 namespace trnr {
 
+template<typename sample>
 class oversampler {
 public:
 	oversampler()
@@ -31,8 +32,7 @@ public:
 		ratio = _ratio;
 	}
 
-	template<typename sample>
-	float** upsample(sample** _inputs, int _blocksize)
+	sample** upsample(sample** _inputs, int _blocksize)
 	{
 		num_samples = _blocksize;
 		required_blocksize = _blocksize * ratio;
@@ -74,7 +74,6 @@ public:
 		return ptrs;
 	}
 
-	template<typename sample>
 	void downsample(sample** _outputs)
 	{
 		if (ratio > 1) {
@@ -103,7 +102,7 @@ private:
 	chebyshev lowpass_out1 {samplerate, 20000};
 	chebyshev lowpass_out2 {samplerate, 20000};
 
-	std::array<std::vector<float>, 2> buffer;
-	float** ptrs = new float*[2];
+	std::array<std::vector<sample>, 2> buffer;
+	sample** ptrs = new sample*[2];
 };
 } // namespace trnr
