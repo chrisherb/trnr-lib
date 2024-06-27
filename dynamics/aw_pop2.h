@@ -63,12 +63,13 @@ public:
 
 	void set_samplerate(double _samplerate) { samplerate = _samplerate; }
 
-	void process_block(double** inputs, double** outputs, long sampleframes)
+	template <typename t_sample>
+	void process_block(t_sample** inputs, t_sample** outputs, long sampleframes)
 	{
-		double* in1 = inputs[0];
-		double* in2 = inputs[1];
-		double* out1 = outputs[0];
-		double* out2 = outputs[1];
+		t_sample* in1 = inputs[0];
+		t_sample* in2 = inputs[1];
+		t_sample* out1 = outputs[0];
+		t_sample* out2 = outputs[1];
 
 		double overallscale = 1.0;
 		overallscale /= 44100.0;
