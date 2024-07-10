@@ -2,6 +2,7 @@
 #include "ivoice.h"
 #include "midi_event.h"
 #include "voice_allocator.h"
+#include <cstring>
 #include <memory>
 #include <vector>
 
@@ -12,7 +13,7 @@ namespace trnr {
 template <typename t_voice, typename t_sample>
 class midi_synth : public voice_allocator<t_voice, t_sample> {
 public:
-	midi_synth(int _n_voices)
+	midi_synth()
 		: m_voices_active {false}
 	{
 		// checks whether template derives from ivoice
