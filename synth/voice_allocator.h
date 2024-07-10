@@ -139,7 +139,7 @@ private:
 			while (iterator != input_queue.end()) {
 
 				midi_event& event = *iterator;
-				if (event.offset == _start_index) {
+				if (event.offset == s) {
 
 					switch (event.type) {
 					case midi_event_type::note_on:
