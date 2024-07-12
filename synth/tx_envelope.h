@@ -29,6 +29,7 @@ public:
 	float release1_rate = 0;
 	float release1_level = 0;
 	float release2_rate = 0;
+	bool skip_sustain = false;
 
 	tx_envelope(bool _retrigger = false)
 		: retrigger {_retrigger}
@@ -130,7 +131,7 @@ public:
 			}
 		}
 		// while sustain phase: if note off is triggered, transition to release phase
-		if (state == sustain && !gate) {
+		if (state == sustain && (!gate || skip_sustain)) {
 			state = release1;
 			level = sustain_level;
 		}
