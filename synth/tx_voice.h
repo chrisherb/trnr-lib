@@ -49,10 +49,12 @@ public:
 
 	void process_samples(t_sample** _outputs, int _start_index, int _block_size) override
 	{
-		float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
-		float pitched_freq = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod) + pitch_env_signal;
+		float frequency = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod);
 
 		for (int s = _start_index; s < _start_index + _block_size; s++) {
+		
+			float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
+			float pitched_freq = frequency + pitch_env_signal;
 
 			float output = 0.f;
 
