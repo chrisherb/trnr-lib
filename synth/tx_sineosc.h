@@ -44,6 +44,7 @@ public:
 
 	void randomize_phase()
 	{
+		std::random_device random;
 		std::mt19937 gen(random());
 		std::uniform_real_distribution<> dis(0.0, 1.0);
 		phase = dis(gen);
@@ -54,7 +55,6 @@ private:
 	float phase_resolution;
 	float phase;
 	float history;
-	std::random_device random;
 
 	float sine(float x)
 	{
