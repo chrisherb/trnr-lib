@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <random>
 
 namespace trnr {
 
@@ -14,13 +15,17 @@ public:
 		, history {0.}
 		, phase_reset {false}
 	{
+		randomize_phase();
 	}
 
 	void set_phase_resolution(float res) { phase_resolution = powf(2, res); }
 
 	float process_sample(bool trigger, float frequency, float phase_modulation = 0.f)
 	{
-		if (trigger && phase_reset) { phase = 0.0; }
+		if (trigger) {
+			if (phase_reset) phase = 0.f;
+			else randomize_phase();
+		}
 
 		float lookup_phase = phase + phase_modulation;
 		wrap(lookup_phase);
@@ -37,11 +42,19 @@ public:
 
 	void set_samplerate(double _samplerate) { this->samplerate = _samplerate; }
 
+	void randomize_phase()
+	{
+		std::mt19937 gen(random());
+		std::uniform_real_distribution<> dis(0.0, 1.0);
+		phase = dis(gen);
+	}
+
 private:
 	double samplerate;
 	float phase_resolution;
 	float phase;
 	float history;
+	std::random_device random;
 
 	float sine(float x)
 	{
