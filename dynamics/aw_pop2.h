@@ -199,58 +199,6 @@ public:
 			flip = !flip;
 			// end compressor section
 
-			// begin ClipOnly2 stereo as a little, compressed chunk that can be dropped into code
-			if (inputSampleL > 4.0) inputSampleL = 4.0;
-			if (inputSampleL < -4.0) inputSampleL = -4.0;
-			if (wasPosClipL == true) { // current will be over
-				if (inputSampleL < lastSampleL) lastSampleL = 0.7058208 + (inputSampleL * 0.2609148);
-				else lastSampleL = 0.2491717 + (lastSampleL * 0.7390851);
-			}
-			wasPosClipL = false;
-			if (inputSampleL > 0.9549925859) {
-				wasPosClipL = true;
-				inputSampleL = 0.7058208 + (lastSampleL * 0.2609148);
-			}
-			if (wasNegClipL == true) { // current will be -over
-				if (inputSampleL > lastSampleL) lastSampleL = -0.7058208 + (inputSampleL * 0.2609148);
-				else lastSampleL = -0.2491717 + (lastSampleL * 0.7390851);
-			}
-			wasNegClipL = false;
-			if (inputSampleL < -0.9549925859) {
-				wasNegClipL = true;
-				inputSampleL = -0.7058208 + (lastSampleL * 0.2609148);
-			}
-			intermediateL[spacing] = inputSampleL;
-			inputSampleL = lastSampleL; // Latency is however many samples equals one 44.1k sample
-			for (int x = spacing; x > 0; x--) intermediateL[x - 1] = intermediateL[x];
-			lastSampleL = intermediateL[0]; // run a little buffer to handle this
-
-			if (inputSampleR > 4.0) inputSampleR = 4.0;
-			if (inputSampleR < -4.0) inputSampleR = -4.0;
-			if (wasPosClipR == true) { // current will be over
-				if (inputSampleR < lastSampleR) lastSampleR = 0.7058208 + (inputSampleR * 0.2609148);
-				else lastSampleR = 0.2491717 + (lastSampleR * 0.7390851);
-			}
-			wasPosClipR = false;
-			if (inputSampleR > 0.9549925859) {
-				wasPosClipR = true;
-				inputSampleR = 0.7058208 + (lastSampleR * 0.2609148);
-			}
-			if (wasNegClipR == true) { // current will be -over
-				if (inputSampleR > lastSampleR) lastSampleR = -0.7058208 + (inputSampleR * 0.2609148);
-				else lastSampleR = -0.2491717 + (lastSampleR * 0.7390851);
-			}
-			wasNegClipR = false;
-			if (inputSampleR < -0.9549925859) {
-				wasNegClipR = true;
-				inputSampleR = -0.7058208 + (lastSampleR * 0.2609148);
-			}
-			intermediateR[spacing] = inputSampleR;
-			inputSampleR = lastSampleR; // Latency is however many samples equals one 44.1k sample
-			for (int x = spacing; x > 0; x--) intermediateR[x - 1] = intermediateR[x];
-			lastSampleR = intermediateR[0]; // run a little buffer to handle this
-			// end ClipOnly2 stereo as a little, compressed chunk that can be dropped into code
-
 			if (wet < 1.0) {
 				inputSampleL = (drySampleL * (1.0 - wet)) + (inputSampleL * wet);
 				inputSampleR = (drySampleR * (1.0 - wet)) + (inputSampleR * wet);
