@@ -49,7 +49,7 @@ public:
 	/* accentuates the filter pumping effect */
 	void set_filter_exp(float value) { filter_exp = value; }
 
-	void process_block(sample** audio, sample** sidechain, uint frames)
+	void process_block(sample** audio, sample** sidechain, int frames)
 	{
 		// highpass filter coefficients
 		float hp_x = std::exp(-2.0 * M_PI * hp_filter / samplerate);
@@ -61,7 +61,7 @@ public:
 		float bst_a0 = 1.0 - bst_x;
 		float bst_b1 = -bst_x;
 
-		for (uint i = 0; i < frames; i++) {
+		for (int i = 0; i < frames; i++) {
 
 			sample input_l = audio[0][i];
 			sample input_r = audio[1][i];
