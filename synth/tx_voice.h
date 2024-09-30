@@ -7,12 +7,16 @@
 
 namespace trnr {
 
+enum mod_dest {
+	out = 0,
+	fm,
+};
+
 template <typename t_sample>
 class tx_voice : public ivoice<t_sample> {
 public:
 	tx_voice()
-		: algorithm {0}
-		, pitch_env_amt {0.f}
+		: pitch_env_amt {0.f}
 		, feedback_amt {0.f}
 		, bit_resolution(12.f)
 	{
@@ -24,7 +28,9 @@ public:
 	float velocity = 1.f;
 	float additional_pitch_mod = 0.f; // modulates pitch in frequency
 
-	int algorithm;
+	mod_dest op3_dest;
+	mod_dest op2_dest;
+
 	float pitch_env_amt;
 	float feedback_amt;
 	float bit_resolution;
@@ -52,37 +58,28 @@ public:
 		float frequency = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod);
 
 		for (int s = _start_index; s < _start_index + _block_size; s++) {
-		
+
 			float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
 			float pitched_freq = frequency + pitch_env_signal;
 
-			float output = 0.f;
+			float op3_signal = process_op3(pitched_freq);
 
-			// mix operator signals according to selected algorithm
-			switch (algorithm) {
-			case 0:
-				output = calc_algo1(pitched_freq);
-				break;
-			case 1:
-				output = calc_algo2(pitched_freq);
-				break;
-			case 2:
-				output = calc_algo3(pitched_freq);
-				break;
-			case 3:
-				output = calc_algo4(pitched_freq);
-				break;
-			default:
-				output = calc_algo1(pitched_freq);
-				break;
-			}
+			float op2_pm = op3_dest == fm ? op3_signal : 0.f;
+			float op2_signal = process_op2(pitched_freq, op2_pm);
+
+			float op1_pm = op2_dest == fm ? op2_signal : 0.f;
+			float op1_signal = process_op1(pitched_freq, op1_pm);
+
+			float signal_mix = op1_signal;
+			if (op3_dest == out) { signal_mix += op3_signal; }
+			if (op2_dest == out) { signal_mix += op2_signal; }
 
 			// reset trigger
 			trigger = false;
 
-			redux(output, bit_resolution);
+			redux(signal_mix, bit_resolution);
 
-                        _outputs[0][s] += output / 3.;
+			_outputs[0][s] += signal_mix / 3.;
 			_outputs[1][s] = _outputs[0][s];
 		}
 	}
@@ -113,7 +110,7 @@ private:
 	const float MOD_INDEX_COEFF = 4.f;
 	float pitch_mod = 0.f; // modulates pitch in semi-tones
 
-	float calc_algo1(const float frequency)
+	float process_op3(const float frequency)
 	{
 		float fb_freq = frequency * op3.ratio;
 		float fb_mod_index = (feedback_amt * MOD_INDEX_COEFF);
@@ -121,69 +118,20 @@ private:
 
 		float op3_Freq = frequency * op3.ratio;
 		float op3_mod_index = (op3.amplitude * MOD_INDEX_COEFF);
-		float op3_signal = op3.process_sample(gate, trigger, op3_Freq, velocity, fb_signal) * op3_mod_index;
-
-		float op2_freq = frequency * op2.ratio;
-		float op2_mod_index = (op2.amplitude * MOD_INDEX_COEFF);
-		float op2_signal = op2.process_sample(gate, trigger, op2_freq, velocity, op3_signal) * op2_mod_index;
-
-		float op1_freq = frequency * op1.ratio;
-		return op1.process_sample(gate, trigger, op1_freq, velocity, op2_signal) * op1.amplitude;
+		return op3.process_sample(gate, trigger, op3_Freq, velocity, fb_signal) * op3_mod_index;
 	}
 
-	float calc_algo2(const float frequency)
+	float process_op2(const float frequency, const float phase_mod = 0.f)
 	{
-		float fb_freq = frequency * op3.ratio;
-		float fb_mod_index = (feedback_amt * MOD_INDEX_COEFF);
-		float fb_signal = feedback_osc.process_sample(trigger, fb_freq) * fb_mod_index;
-
-		float op3_freq = frequency * op3.ratio;
-		float op3_signal = op3.process_sample(gate, trigger, op3_freq, velocity, fb_signal) * op3.amplitude;
-
 		float op2_freq = frequency * op2.ratio;
 		float op2_mod_index = (op2.amplitude * MOD_INDEX_COEFF);
-		float op2_signal = op2.process_sample(gate, trigger, op2_freq, velocity) * op2_mod_index;
-
-		float op1_freq = frequency * op1.ratio;
-		float op1_signal = op1.process_sample(gate, trigger, op1_freq, velocity, op2_signal) * op1.amplitude;
-
-		return op1_signal + op3_signal;
+		return op2.process_sample(gate, trigger, op2_freq, velocity, phase_mod) * op2_mod_index;
 	}
 
-	float calc_algo3(const float frequency)
+	float process_op1(const float frequency, const float phase_mod = 0.f)
 	{
-		float fb_freq = frequency * op3.ratio;
-		float fb_mod_index = (feedback_amt * MOD_INDEX_COEFF);
-		float fb_signal = feedback_osc.process_sample(trigger, fb_freq) * fb_mod_index;
-
-		float op3_freq = frequency * op3.ratio;
-		float op3_signal = op3.process_sample(gate, trigger, op3_freq, velocity, fb_signal) * op3.amplitude;
-
-		float op2_freq = frequency * op2.ratio;
-		float op2_signal = op2.process_sample(gate, trigger, op2_freq, velocity) * op2.amplitude;
-
 		float op1_freq = frequency * op1.ratio;
-		float op1_signal = op1.process_sample(gate, trigger, op1_freq, velocity) * op1.amplitude;
-
-		return op1_signal + op2_signal + op3_signal;
-	}
-
-	float calc_algo4(const float frequency)
-	{
-		float fb_freq = frequency * op3.ratio;
-		float fb_mod_index = (feedback_amt * MOD_INDEX_COEFF);
-		float fb_signal = feedback_osc.process_sample(trigger, fb_freq) * fb_mod_index;
-
-		float op3_freq = frequency * op3.ratio;
-		float op3_mod_index = (op3.amplitude * MOD_INDEX_COEFF);
-		float op3_signal = op3.process_sample(gate, trigger, op3_freq, velocity, fb_signal) * op3_mod_index;
-
-		float op2_freq = frequency * op2.ratio;
-		float op2_mod_index = (op2.amplitude * MOD_INDEX_COEFF);
-		float op2_signal = op2.process_sample(gate, trigger, op2_freq, velocity) * op2_mod_index;
-
-		float op1_freq = frequency * op1.ratio;
-		return op1.process_sample(gate, trigger, op1_freq, velocity, op2_signal + op3_signal) * op1.amplitude;
+		return op1.process_sample(gate, trigger, op1_freq, velocity, phase_mod) * op1.amplitude;
 	}
 
 	float redux(float& value, float resolution)
