@@ -5,11 +5,9 @@ class wavefolder {
 public:
 	float amount = 1.f;
 
-	float process_sample(float& _sample)
+	void process_sample(float& _sample)
 	{
-		if (amount > 1.f) { return fold(_sample * amount); }
-
-        return 0.f;
+		if (amount > 1.f) { _sample = fold(_sample * amount); }
 	}
 
 private:

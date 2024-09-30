@@ -30,7 +30,7 @@ public:
 		// drifts and sounds better!
 		if (envelope.is_busy()) {
 			float osc = oscillator.process_sample(trigger, frequency, pm);
-			osc = wavefolding.process_sample(osc);
+			m_wavefolder.process_sample(osc);
 			return osc * env * velocity;
 		} else {
 			return 0.;
