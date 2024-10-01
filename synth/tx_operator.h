@@ -25,9 +25,12 @@ public:
 	float process_sample(const bool& gate, const bool& trigger, const float& frequency, const float& velocity,
 						 const float& pm = 0)
 	{
-		float env = envelope_enabled ? envelope.process_sample(gate, trigger) : 1.f;
+		float env = 1.f;
 
-		if (!envelope.is_busy()) return 0.f;
+		if (envelope_enabled) {
+			env = envelope.process_sample(gate, trigger);
+			if (!envelope.is_busy()) return 0.f;
+		}
 
 		float osc = oscillator.process_sample(trigger, frequency, pm);
 		folder.process_sample(osc);
