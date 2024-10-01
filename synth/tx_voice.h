@@ -8,8 +8,9 @@
 namespace trnr {
 
 enum mod_dest {
-	out = 0,
-	fm,
+	mod_dest_out = 0,
+	mod_dest_fm,
+	mod_dest_am
 };
 
 template <typename t_sample>
@@ -28,8 +29,8 @@ public:
 	float velocity = 1.f;
 	float additional_pitch_mod = 0.f; // modulates pitch in frequency
 
-	mod_dest op3_dest;
-	mod_dest op2_dest;
+	mod_dest op2_dest = mod_dest_fm;
+	mod_dest op3_dest = mod_dest_fm;
 
 	float pitch_env_amt;
 	float feedback_amt;
@@ -62,24 +63,14 @@ public:
 			float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
 			float pitched_freq = frequency + pitch_env_signal;
 
-			float op3_signal = process_op3(pitched_freq);
-
-			float op2_pm = op3_dest == fm ? op3_signal : 0.f;
-			float op2_signal = process_op2(pitched_freq, op2_pm);
-
-			float op1_pm = op2_dest == fm ? op2_signal : 0.f;
-			float op1_signal = process_op1(pitched_freq, op1_pm);
-
-			float signal_mix = op1_signal;
-			if (op3_dest == out) { signal_mix += op3_signal; }
-			if (op2_dest == out) { signal_mix += op2_signal; }
+			float signal = process_operators(pitched_freq);
 
 			// reset trigger
 			trigger = false;
 
-			redux(signal_mix, bit_resolution);
+			redux(signal, bit_resolution);
 
-			_outputs[0][s] += signal_mix / 3.;
+			_outputs[0][s] += signal / 3.;
 			_outputs[1][s] = _outputs[0][s];
 		}
 	}
@@ -113,25 +104,65 @@ private:
 	float process_op3(const float frequency)
 	{
 		float fb_freq = frequency * op3.ratio;
-		float fb_mod_index = (feedback_amt * MOD_INDEX_COEFF);
+		float fb_mod_index = feedback_amt * MOD_INDEX_COEFF;
 		float fb_signal = feedback_osc.process_sample(trigger, fb_freq) * fb_mod_index;
 
 		float op3_Freq = frequency * op3.ratio;
-		float op3_mod_index = (op3.amplitude * MOD_INDEX_COEFF);
-		return op3.process_sample(gate, trigger, op3_Freq, velocity, fb_signal) * op3_mod_index;
+		return op3.process_sample(gate, trigger, op3_Freq, velocity, fb_signal) * op3.amplitude;
 	}
 
-	float process_op2(const float frequency, const float phase_mod = 0.f)
+	float process_op2(const float frequency, const float modulator)
 	{
-		float op2_freq = frequency * op2.ratio;
-		float op2_mod_index = (op2.amplitude * MOD_INDEX_COEFF);
-		return op2.process_sample(gate, trigger, op2_freq, velocity, phase_mod) * op2_mod_index;
+		// if patched, op3 modulates the phase of op2
+		float pm = op3_dest == mod_dest_fm ? modulator : 0.f;
+
+		float adjusted_freq = frequency * op2.ratio;
+		float signal = op2.process_sample(gate, trigger, adjusted_freq, velocity, pm * MOD_INDEX_COEFF) * op2.amplitude;
+
+		// if patched, op3 modulated the amplitude of op2
+		if (op3_dest == mod_dest_am) ring_mod(signal, modulator, op3.amplitude);
+
+		return signal;
 	}
 
-	float process_op1(const float frequency, const float phase_mod = 0.f)
+	float process_op1(const float frequency, const float modulator)
 	{
+		// if patched, op2 modulates the phase of op1
+		float pm = op2_dest == mod_dest_fm ? modulator : 0.f;
+
 		float op1_freq = frequency * op1.ratio;
-		return op1.process_sample(gate, trigger, op1_freq, velocity, phase_mod) * op1.amplitude;
+		float signal = op1.process_sample(gate, trigger, op1_freq, velocity, pm * MOD_INDEX_COEFF) * op1.amplitude;
+
+		// if patched, op2 modulates the amplitude of op1
+		if (op2_dest == mod_dest_am) ring_mod(signal, modulator, op2.amplitude);
+
+		return signal;
+	}
+
+	float process_operators(float frequency)
+	{
+		float op3_signal = process_op3(frequency);
+
+		float op2_signal = process_op2(frequency, op3_signal);
+
+		float op1_signal = process_op1(frequency, op2_signal);
+
+		float signal_mix = op1_signal;
+		if (op3_dest == mod_dest_out) { signal_mix += op3_signal; }
+		if (op2_dest == mod_dest_out) { signal_mix += op2_signal; }
+
+		return signal_mix;
+	}
+
+	void ring_mod(float& carrier, float modulator, float blend)
+	{
+		float dry_lvl = 1.f - blend;
+		float wet_lvl = blend;
+
+		float dry_signal = carrier;
+		float wet_signal = carrier * modulator * 1.5f;
+
+		carrier = dry_lvl * dry_signal + wet_lvl * wet_signal;
 	}
 
 	float redux(float& value, float resolution)
