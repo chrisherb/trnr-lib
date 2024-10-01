@@ -27,17 +27,14 @@ public:
 	{
 		float env = envelope_enabled ? envelope.process_sample(gate, trigger) : 1.f;
 
-		// drifts and sounds better!
-		if (envelope.is_busy()) {
-			float osc = oscillator.process_sample(trigger, frequency, pm);
-			folder.process_sample(osc);
+		if (!envelope.is_busy()) return 0.f;
 
-			float adjusted_velocity = velocity_enabled ? velocity : 1.f;
+		float osc = oscillator.process_sample(trigger, frequency, pm);
+		folder.process_sample(osc);
 
-			return osc * env * adjusted_velocity;
-		} else {
-			return 0.;
-		}
+		float adjusted_velocity = velocity_enabled ? velocity : 1.f;
+
+		return osc * env * adjusted_velocity;
 	}
 
 	void set_samplerate(double samplerate)
