@@ -21,6 +21,7 @@ public:
 		, feedback_amt {0.f}
 		, bit_resolution(12.f)
 	{
+		set_glide_time(0.f);
 	}
 
 	bool gate = false;
@@ -41,6 +42,8 @@ public:
 	tx_operator op2;
 	tx_operator op3;
 
+	void set_glide_time(float time_ms) { glide = 1 - exp(-1.0 / (time_ms * samplerate / 1000.f)); }
+
 	void note_on(int _note, float _velocity) override
 	{
 		this->gate = true;
@@ -56,12 +59,15 @@ public:
 
 	void process_samples(t_sample** _outputs, int _start_index, int _block_size) override
 	{
-		float frequency = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod);
+		target_frequency = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod);
 
 		for (int s = _start_index; s < _start_index + _block_size; s++) {
 
+			// calculate moving average for portamento
+			current_frequency = (1 - glide) * current_frequency + glide * target_frequency;
+
 			float pitch_env_signal = pitch_env.process_sample(gate, trigger) * pitch_env_amt;
-			float pitched_freq = frequency + pitch_env_signal;
+			float pitched_freq = current_frequency + pitch_env_signal;
 
 			float signal = process_operators(pitched_freq);
 
@@ -80,13 +86,14 @@ public:
 		return gate || op1.envelope.is_busy() || op2.envelope.is_busy() || op3.envelope.is_busy();
 	}
 
-	void set_samplerate(double samplerate) override
+	void set_samplerate(double _samplerate) override
 	{
-		pitch_env.set_samplerate(samplerate);
-		feedback_osc.set_samplerate(samplerate);
-		op1.set_samplerate(samplerate);
-		op2.set_samplerate(samplerate);
-		op3.set_samplerate(samplerate);
+		samplerate = _samplerate;
+		pitch_env.set_samplerate(_samplerate);
+		feedback_osc.set_samplerate(_samplerate);
+		op1.set_samplerate(_samplerate);
+		op2.set_samplerate(_samplerate);
+		op3.set_samplerate(_samplerate);
 	}
 
 	void set_phase_reset(bool phase_reset)
@@ -98,8 +105,13 @@ public:
 	}
 
 private:
+	double samplerate;
 	const float MOD_INDEX_COEFF = 4.f;
 	float pitch_mod = 0.f; // modulates pitch in semi-tones
+
+	float current_frequency;
+	float target_frequency;
+	float glide;
 
 	float process_op3(const float frequency)
 	{
