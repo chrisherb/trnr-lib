@@ -172,7 +172,7 @@ private:
 		float wet_lvl = blend;
 
 		float dry_signal = carrier;
-		float wet_signal = carrier * modulator * 1.5f;
+		float wet_signal = carrier * modulator * 2.0f;
 
 		carrier = dry_lvl * dry_signal + wet_lvl * wet_signal;
 	}
