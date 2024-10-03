@@ -11,7 +11,23 @@ public:
 	}
 
 private:
+	// folds the wave from -1 to 1
 	float fold(float _sample)
+	{
+		while (_sample > 1.0 || _sample < -1.0) {
+
+			if (_sample > 1.0) {
+				_sample = 2.0 - _sample;
+			} else if (_sample < -1.0) {
+				_sample = -2.0 - _sample;
+			}
+		}
+
+		return _sample;
+	}
+
+	// folds the positive part of the wave independently from the negative part.
+	float fold_bipolar(float _sample)
 	{
 		// fold positive values
 		if (_sample > 1.0) {
