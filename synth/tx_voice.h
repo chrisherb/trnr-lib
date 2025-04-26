@@ -4,6 +4,7 @@
 #include "tx_envelope.h"
 #include "tx_operator.h"
 #include "tx_sineosc.h"
+#include "tx_parameter_mapping.h"
 
 namespace trnr {
 
@@ -109,6 +110,14 @@ public:
 		feedback_osc.phase_reset = phase_reset;
 	}
 
+	void update_parameters(float _value, const std::vector<tx_parameter_mapping>& _mappings)
+	{
+		for (const tx_parameter_mapping& mapping : _mappings) {
+			float normalized = mapping.apply(_value);
+			map_parameter(mapping, normalized);
+		}
+	}
+
 private:
 	const float MOD_INDEX_COEFF = 4.f;
 	float pitch_mod = 0.f; // modulates pitch in semi-tones
@@ -192,6 +201,198 @@ private:
 		value = roundf(value * res) / res;
 
 		return value;
+	}
+
+	void map_parameter(const tx_parameter_mapping& _mapping, const float _value)
+	{
+		switch (_mapping.parameter) {
+			case tx_parameter::BIT_RESOLUTION:
+				bit_resolution = _value;
+				break;
+			case tx_parameter::FEEDBACKOSC_PHASE_RESOLUTION:
+				feedback_osc.set_phase_resolution(_value);
+				break;
+			case tx_parameter::FEEDBACK:
+				feedback_amt = _value;
+				break;
+			case tx_parameter::ALGORITHM:
+				algorithm = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_AMOUNT:
+				pitch_env_amt = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_SKIP_SUSTAIN:
+				pitch_env.skip_sustain = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_ATTACK1_RATE:
+				pitch_env.attack1_rate = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_ATTACK1_LEVEL:
+				pitch_env.attack1_level = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_ATTACK2_RATE:
+				pitch_env.attack2_rate = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_HOLD_RATE:
+				pitch_env.hold_rate = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_DECAY1_RATE:
+				pitch_env.decay1_rate = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_DECAY1_LEVEL:
+				pitch_env.decay1_level = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_DECAY2_RATE:
+				pitch_env.decay2_rate = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_SUSTAIN_LEVEL:
+				pitch_env.sustain_level = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_RELEASE1_RATE:
+				pitch_env.release1_rate = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_RELEASE1_LEVEL:
+				pitch_env.release1_level = _value;
+				break;
+			case tx_parameter::PITCH_ENVELOPE_RELEASE2_RATE:
+				pitch_env.release2_rate = _value;
+				break;
+			case tx_parameter::OP1_RATIO:
+				op1.ratio = _value;
+				break;
+			case tx_parameter::OP1_AMPLITUDE:
+				op1.amplitude = _value;
+				break;
+			case tx_parameter::OP1_PHASE_RESOLUTION:
+				op1.oscillator.set_phase_resolution(_value);
+				break;
+			case tx_parameter::OP1_ENVELOPE_SKIP_SUSTAIN:
+				op1.envelope.skip_sustain = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_ATTACK1_RATE:
+				op1.envelope.attack1_rate = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_ATTACK1_LEVEL:
+				op1.envelope.attack1_level = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_ATTACK2_RATE:
+				op1.envelope.attack2_rate = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_HOLD_RATE:
+				op1.envelope.hold_rate = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_DECAY1_RATE:
+				op1.envelope.decay1_rate = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_DECAY1_LEVEL:
+				op1.envelope.decay1_level = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_DECAY2_RATE:
+				op1.envelope.decay2_rate = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_SUSTAIN_LEVEL:
+				op1.envelope.sustain_level = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_RELEASE1_RATE:
+				op1.envelope.release1_rate = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_RELEASE1_LEVEL:
+				op1.envelope.release1_level = _value;
+				break;
+			case tx_parameter::OP1_ENVELOPE_RELEASE2_RATE:
+				op1.envelope.release2_rate = _value;
+				break;
+			case tx_parameter::OP2_RATIO:
+				op2.ratio = _value;
+				break;
+			case tx_parameter::OP2_AMPLITUDE:
+				op2.amplitude = _value;
+				break;
+			case tx_parameter::OP2_PHASE_RESOLUTION:
+				op2.oscillator.set_phase_resolution(_value);
+				break;
+			case tx_parameter::OP2_ENVELOPE_SKIP_SUSTAIN:
+				op2.envelope.skip_sustain = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_ATTACK1_RATE:
+				op2.envelope.attack1_rate = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_ATTACK1_LEVEL:
+				op2.envelope.attack1_level = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_ATTACK2_RATE:
+				op2.envelope.attack2_rate = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_HOLD_RATE:
+				op2.envelope.hold_rate = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_DECAY1_RATE:
+				op2.envelope.decay1_rate = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_DECAY1_LEVEL:
+				op2.envelope.decay1_level = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_DECAY2_RATE:
+				op2.envelope.decay2_rate = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_SUSTAIN_LEVEL:
+				op2.envelope.sustain_level = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_RELEASE1_RATE:
+				op2.envelope.release1_rate = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_RELEASE1_LEVEL:
+				op2.envelope.release1_level = _value;
+				break;
+			case tx_parameter::OP2_ENVELOPE_RELEASE2_RATE:
+				op2.envelope.release2_rate = _value;
+				break;
+			case tx_parameter::OP3_RATIO:
+				op3.ratio = _value;
+				break;
+			case tx_parameter::OP3_AMPLITUDE:
+				op3.amplitude = _value;
+				break;
+			case tx_parameter::OP3_PHASE_RESOLUTION:
+				op3.oscillator.set_phase_resolution(_value);
+				break;
+			case tx_parameter::OP3_ENVELOPE_SKIP_SUSTAIN:
+				op3.envelope.skip_sustain = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_ATTACK1_RATE:
+				op3.envelope.attack1_rate = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_ATTACK1_LEVEL:
+				op3.envelope.attack1_level = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_ATTACK2_RATE:
+				op3.envelope.attack2_rate = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_HOLD_RATE:
+				op3.envelope.hold_rate = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_DECAY1_RATE:
+				op3.envelope.decay1_rate = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_DECAY1_LEVEL:
+				op3.envelope.decay1_level = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_DECAY2_RATE:
+				op3.envelope.decay2_rate = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_SUSTAIN_LEVEL:
+				op3.envelope.sustain_level = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_RELEASE1_RATE:
+				op3.envelope.release1_rate = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_RELEASE1_LEVEL:
+				op3.envelope.release1_level = _value;
+				break;
+			case tx_parameter::OP3_ENVELOPE_RELEASE2_RATE:
+				op3.envelope.release2_rate = _value;
+				break;
+		}
 	}
 };
 } // namespace trnr

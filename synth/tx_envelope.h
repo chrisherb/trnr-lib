@@ -41,7 +41,6 @@ public:
 	template <typename t_sample>
 	float process_sample(bool gate, bool trigger, t_sample _attack_mod, t_sample _decay_mod)
 	{
-
 		size_t attack_mid_x1 = ms_to_samples(attack1_rate + (float)_attack_mod);
 		size_t attack_mid_x2 = ms_to_samples(attack2_rate + (float)_attack_mod);
 		size_t hold_samp = ms_to_samples(hold_rate);
