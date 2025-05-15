@@ -3,7 +3,6 @@
 #include "midi_event.h"
 #include "voice_allocator.h"
 #include <cstring>
-#include <memory>
 #include <vector>
 
 namespace trnr {

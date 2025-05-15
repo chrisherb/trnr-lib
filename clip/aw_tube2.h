@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <stdint.h>
+#include <cmath>
 
 namespace trnr {
 // modeled tube preamp based on tube2 by Chris Johnson

@@ -2,7 +2,7 @@
 #define _USE_MATH_DEFINES
 #include <array>
 #include <math.h>
-#include <vector>
+#include <stdint.h>
 
 namespace trnr {
 template <typename t_sample>

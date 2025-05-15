@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <stdint.h>
+#include <cmath>
 
 namespace trnr {
 // compressor based on pop2 by Chris Johnson

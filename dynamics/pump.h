@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cmath>
+#include "audio_math.h"
+
 namespace trnr {
 template <typename sample>
 class pump {
@@ -91,7 +94,7 @@ public:
 
 			// transfer function
 			float gain_reduction_db = envelope_db * (slope - 1.0);
-			float gain_reduction_lin = trnr::db_2_lin(gain_reduction_db);
+			float gain_reduction_lin = db_2_lin(gain_reduction_db);
 
 			// compress left and right signals
 			sample output_l = input_l * gain_reduction_lin;

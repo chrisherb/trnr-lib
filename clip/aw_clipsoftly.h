@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <stdint.h>
+#include <cmath>
 
 namespace trnr {
 // soft clipper based on ClipSoftly by Chris Johnson

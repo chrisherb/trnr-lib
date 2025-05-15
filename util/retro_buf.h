@@ -2,7 +2,6 @@
 
 #include "../filter/chebyshev.h"
 #include "../companding/ulaw.h"
-#include <iostream>
 
 namespace trnr {
 
@@ -130,7 +129,7 @@ private:
 
     double wrap(double value, double max) {
         while (value > max) {
-            value =- max;
+            value -= max;
         }
         return value;
     }

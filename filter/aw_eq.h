@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <stdint.h>
+#include <cmath>
 
 namespace trnr {
 // 3 band equalizer with high/lowpass filters based on EQ by Chris Johnson.
