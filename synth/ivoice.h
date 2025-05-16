@@ -1,10 +1,11 @@
 #pragma once
+#include <span>
 
 namespace trnr {
 template <typename t_sample>
 struct ivoice {
 	virtual ~ivoice() = default;
-	virtual void process_samples(t_sample** _outputs, int _start_index, int _block_size) = 0;
+    virtual void process_samples(t_sample** _outputs, int _start_index, int _block_size, std::span<std::span<t_sample>> _modulators = {}) = 0;
 	virtual bool is_busy() = 0;
 	virtual void set_samplerate(double samplerate) = 0;
 	virtual void note_on(int _note, float _velocity) = 0;

@@ -25,7 +25,7 @@ public:
 		voice_allocator<t_voice, t_sample>::set_samplerate(_samplerate);
 	}
 
-	void process_block(t_sample** _outputs, int _n_frames)
+	void process_block(t_sample** _outputs, int _n_frames, std::span<std::span<t_sample>> _modulators = {})
 	{
 		// clear outputs
 		for (auto i = 0; i < 2; i++) { memset(_outputs[i], 0, _n_frames * sizeof(t_sample)); }
@@ -55,7 +55,7 @@ public:
 					m_event_queue.erase(m_event_queue.begin());
 				}
 
-				voice_allocator<t_voice, t_sample>::process_samples(_outputs, start_index, block_size);
+				voice_allocator<t_voice, t_sample>::process_samples(_outputs, start_index, block_size, _modulators);
 
 				samples_remaining -= block_size;
 				start_index += block_size;

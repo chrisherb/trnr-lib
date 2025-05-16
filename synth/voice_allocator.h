@@ -61,14 +61,14 @@ public:
 		});
 	}
 
-	void process_samples(t_sample** _outputs, int _start_index, int _block_size)
+	void process_samples(t_sample** _outputs, int _start_index, int _block_size, std::span<std::span<t_sample>> _modulators = {})
 	{
 		for (int b = _start_index; b < _start_index + _block_size; b += internal_block_size) {
 
 			// process all events in the block (introduces potential inaccuracy of up to 16 samples)
 			process_events(b, internal_block_size);
 
-			for (const auto& v : voicePtrs) { v->process_samples(_outputs, b, internal_block_size); }
+			for (const auto& v : voicePtrs) { v->process_samples(_outputs, b, internal_block_size, _modulators); }
 		}
 	}
 
