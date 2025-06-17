@@ -1,38 +1,39 @@
 #pragma once
+#include "audio_buffer.h"
 #include "ivoice.h"
 #include "midi_event.h"
-#include <vector>
-#include <memory>
 #include <algorithm>
 #include <functional>
+#include <memory>
+#include <vector>
 
 namespace trnr {
 
 template <typename t_voice, typename t_sample>
 class voice_allocator {
 public:
-	std::vector<std::shared_ptr<t_voice>> voicePtrs;
+	std::vector<std::shared_ptr<t_voice>> voice_ptrs;
 
 	voice_allocator()
 	{
 		// checks whether template derives from ivoice
 		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 
-		voicePtrs.reserve(8);
+		voice_ptrs.reserve(8);
 	}
 
 	void set_voice_count(const int& voice_count)
 	{
-		if (voice_count > voicePtrs.size()) {
-			for (int i = voicePtrs.size(); i < voice_count; ++i) {
-				if (voicePtrs.size() > 0) {
-					voicePtrs.emplace_back(std::make_shared<t_voice>(*voicePtrs.at(0)));
+		if (voice_count > voice_ptrs.size()) {
+			for (int i = voice_ptrs.size(); i < voice_count; ++i) {
+				if (voice_ptrs.size() > 0) {
+					voice_ptrs.emplace_back(std::make_shared<t_voice>(*voice_ptrs.at(0)));
 				} else {
-					voicePtrs.emplace_back(std::make_shared<t_voice>());
+					voice_ptrs.emplace_back(std::make_shared<t_voice>());
 				}
 			}
-		} else if (voice_count < voicePtrs.size()) {
-			voicePtrs.resize(voice_count);
+		} else if (voice_count < voice_ptrs.size()) {
+			voice_ptrs.resize(voice_count);
 		}
 	}
 
@@ -47,28 +48,29 @@ public:
 
 	void note_off(const midi_event& event)
 	{
-		for (const auto& v : voicePtrs) {
+		for (const auto& v : voice_ptrs) {
 			if (v->midi_note == event.midi_note) v->note_off();
 		}
 	}
 
 	void access(std::function<void(t_voice*)> f)
 	{
-		std::for_each(voicePtrs.begin(), voicePtrs.end(), [&](std::shared_ptr<t_voice> ptr) {
+		std::for_each(voice_ptrs.begin(), voice_ptrs.end(), [&](std::shared_ptr<t_voice> ptr) {
 			if (ptr) {
 				f(ptr.get()); // Call the function with the raw pointer
 			}
 		});
 	}
 
-	void process_samples(t_sample** _outputs, int _start_index, int _block_size, std::span<std::span<t_sample>> _modulators = {})
+	void process_samples(t_sample** _outputs, int _start_index, int _block_size,
+						 std::vector<audio_buffer<t_sample>> _modulators = {})
 	{
 		for (int b = _start_index; b < _start_index + _block_size; b += internal_block_size) {
 
 			// process all events in the block (introduces potential inaccuracy of up to 16 samples)
 			process_events(b, internal_block_size);
 
-			for (const auto& v : voicePtrs) { v->process_samples(_outputs, b, internal_block_size, _modulators); }
+			for (const auto& v : voice_ptrs) { v->process_samples(_outputs, b, internal_block_size, _modulators); }
 		}
 	}
 
@@ -78,7 +80,7 @@ public:
 	{
 		bool voices_active = false;
 
-		for (const auto& v : voicePtrs) {
+		for (const auto& v : voice_ptrs) {
 			bool busy = v->is_busy();
 			voices_active |= busy;
 		}
@@ -88,7 +90,7 @@ public:
 
 	void set_samplerate(double _samplerate)
 	{
-		for (const auto& v : voicePtrs) { v->set_samplerate(_samplerate); }
+		for (const auto& v : voice_ptrs) { v->set_samplerate(_samplerate); }
 	}
 
 private:
@@ -100,7 +102,7 @@ private:
 	{
 		std::shared_ptr<t_voice> voice = nullptr;
 
-		for (const auto& v : voicePtrs) {
+		for (const auto& v : voice_ptrs) {
 
 			if (!v->is_busy()) voice = v;
 			break;
@@ -113,7 +115,7 @@ private:
 	{
 		std::shared_ptr<t_voice> free_voice = nullptr;
 
-		for (const auto& v : voicePtrs) {
+		for (const auto& v : voice_ptrs) {
 			if (!v->gate) {
 				free_voice = v;
 				break;
@@ -121,9 +123,9 @@ private:
 		}
 
 		if (!free_voice) {
-			free_voice = voicePtrs.at(index_to_steal);
+			free_voice = voice_ptrs.at(index_to_steal);
 
-			if (index_to_steal < voicePtrs.size() - 1) {
+			if (index_to_steal < voice_ptrs.size() - 1) {
 				index_to_steal++;
 			} else {
 				index_to_steal = 0;

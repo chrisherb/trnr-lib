@@ -1,4 +1,5 @@
 #pragma once
+#include "audio_buffer.h"
 #include "ivoice.h"
 #include "midi_event.h"
 #include "voice_allocator.h"
@@ -25,7 +26,7 @@ public:
 		voice_allocator<t_voice, t_sample>::set_samplerate(_samplerate);
 	}
 
-	void process_block(t_sample** _outputs, int _n_frames, std::span<std::span<t_sample>> _modulators = {})
+	void process_block(t_sample** _outputs, int _n_frames, std::vector<audio_buffer<t_sample>> _modulators = {})
 	{
 		// clear outputs
 		for (auto i = 0; i < 2; i++) { memset(_outputs[i], 0, _n_frames * sizeof(t_sample)); }

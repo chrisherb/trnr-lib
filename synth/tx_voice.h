@@ -1,11 +1,12 @@
 #pragma once
 #include "../util/audio_math.h"
+#include "audio_buffer.h"
 #include "ivoice.h"
 #include "tx_envelope.h"
 #include "tx_operator.h"
-#include "tx_sineosc.h"
 #include "tx_parameter_mapping.h"
-#include <span>
+#include "tx_sineosc.h"
+#include <vector>
 
 namespace trnr {
 
@@ -49,7 +50,8 @@ public:
 	// modulates the pitch in semitones
 	void modulate_pitch(float _pitch) override { this->pitch_mod = _pitch; }
 
-	void process_samples(t_sample** _outputs, int _start_index, int _block_size, std::span<std::span<t_sample>> _modulators = {}) override
+	void process_samples(t_sample** _outputs, int _start_index, int _block_size,
+						 std::vector<audio_buffer<t_sample>> _modulators = {}) override
 	{
 		float frequency = midi_to_frequency(midi_note + pitch_mod + additional_pitch_mod);
 
