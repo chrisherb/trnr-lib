@@ -86,7 +86,7 @@ public:
 
 			redux(output, bit_resolution);
 
-                        _outputs[0][s] += output / 3.;
+			_outputs[0][s] += output / 3.;
 			_outputs[1][s] = _outputs[0][s];
 		}
 	}
