@@ -1,8 +1,10 @@
 #pragma once
+
 #include <algorithm>
 #include <cassert>
 #include <vector>
 
+namespace trnr {
 template <typename t_sample>
 class audio_buffer {
 public:
@@ -18,7 +20,7 @@ public:
 		update_channel_ptrs();
 	}
 
-	audio_buffer(int channels, int frames)
+	audio_buffer(int channels = 1, int frames = 1024)
 		: m_channels(channels)
 		, m_frames(frames)
 		, m_data(channels * frames)
@@ -71,7 +73,9 @@ private:
 	}
 
 	std::vector<t_sample> m_data;
+	std::vector<t_sample*> m_channel_ptrs;
+
 	int m_channels;
 	int m_frames; // samples per channel
-	std::vector<t_sample*> m_channel_ptrs;
 };
+} // namespace trnr
