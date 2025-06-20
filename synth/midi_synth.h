@@ -3,6 +3,7 @@
 #include "ivoice.h"
 #include "midi_event.h"
 #include "voice_allocator.h"
+#include <cstddef>
 #include <cstring>
 #include <vector>
 
@@ -13,9 +14,12 @@ namespace trnr {
 template <typename t_voice, typename t_sample>
 class midi_synth : public voice_allocator<t_voice, t_sample> {
 public:
-	midi_synth()
+	midi_synth(size_t voice_reserve = 1)
 		: m_voices_active {false}
 	{
+		// call base constructor with a reserve of 1 voice
+		voice_allocator<t_voice, t_sample>::set_voice_count(voice_reserve);
+
 		// checks whether template derives from ivoice
 		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 	}

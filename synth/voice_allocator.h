@@ -3,6 +3,7 @@
 #include "ivoice.h"
 #include "midi_event.h"
 #include <algorithm>
+#include <cassert>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -14,12 +15,14 @@ class voice_allocator {
 public:
 	std::vector<std::shared_ptr<t_voice>> voice_ptrs;
 
-	voice_allocator()
+	voice_allocator(size_t voice_reserve = 1)
 	{
 		// checks whether template derives from ivoice
 		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 
-		voice_ptrs.reserve(8);
+		assert(voice_reserve > 0 && "voice_reserve must be greater than 0");
+
+		voice_ptrs.reserve(voice_reserve);
 	}
 
 	void set_voice_count(const int& voice_count)
