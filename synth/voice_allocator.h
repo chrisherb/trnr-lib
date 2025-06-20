@@ -2,6 +2,7 @@
 #include "audio_buffer.h"
 #include "ivoice.h"
 #include "midi_event.h"
+
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -15,34 +16,24 @@ class voice_allocator {
 public:
 	std::vector<std::shared_ptr<t_voice>> voice_ptrs;
 
-	voice_allocator(size_t voice_reserve = 1)
+	voice_allocator(size_t num_voices = 1)
 	{
 		// checks whether template derives from ivoice
 		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 
-		assert(voice_reserve > 0 && "voice_reserve must be greater than 0");
+		assert(num_voices > 0 && "voice_reserve must be greater than 0");
 
-		voice_ptrs.reserve(voice_reserve);
+		init_voice_ptrs(num_voices);
 	}
 
 	void set_voice_count(const int& voice_count)
 	{
-		if (voice_count > voice_ptrs.size()) {
-			for (int i = voice_ptrs.size(); i < voice_count; ++i) {
-				if (voice_ptrs.size() > 0) {
-					voice_ptrs.emplace_back(std::make_shared<t_voice>(*voice_ptrs.at(0)));
-				} else {
-					voice_ptrs.emplace_back(std::make_shared<t_voice>());
-				}
-			}
-		} else if (voice_count < voice_ptrs.size()) {
-			voice_ptrs.resize(voice_count);
-		}
+		active_voice_count = std::min<size_t>(voice_count, voice_ptrs.size());
 	}
 
 	void note_on(const midi_event& event)
 	{
-		auto voice = get_free_voice(event.midi_note);
+		auto voice = get_free_voice();
 
 		if (!voice) { voice = steal_voice(); }
 
@@ -73,7 +64,9 @@ public:
 			// process all events in the block (introduces potential inaccuracy of up to 16 samples)
 			process_events(b, internal_block_size);
 
-			for (const auto& v : voice_ptrs) { v->process_samples(_outputs, b, internal_block_size, _modulators); }
+			for (size_t i = 0; i < active_voice_count; ++i) {
+				voice_ptrs[i]->process_samples(_outputs, b, internal_block_size, _modulators);
+			}
 		}
 	}
 
@@ -100,42 +93,35 @@ private:
 	std::vector<midi_event> input_queue;
 	int index_to_steal = 0;
 	const int internal_block_size = 16;
+	size_t active_voice_count;
 
-	std::shared_ptr<t_voice> get_free_voice(float frequency)
+	void init_voice_ptrs(size_t num_voices)
 	{
-		std::shared_ptr<t_voice> voice = nullptr;
+		voice_ptrs.reserve(num_voices);
 
-		for (const auto& v : voice_ptrs) {
+		for (size_t i = 0; i < num_voices; ++i) { voice_ptrs.emplace_back(std::make_shared<t_voice>()); }
+	}
 
-			if (!v->is_busy()) voice = v;
-			break;
+	std::shared_ptr<t_voice> get_free_voice()
+	{
+		for (size_t i = 0; i < active_voice_count; ++i) {
+			if (!voice_ptrs[i]->is_busy()) { return voice_ptrs[i]; }
 		}
 
-		return voice;
+		return nullptr;
 	}
 
 	std::shared_ptr<t_voice> steal_voice()
 	{
-		std::shared_ptr<t_voice> free_voice = nullptr;
-
-		for (const auto& v : voice_ptrs) {
-			if (!v->gate) {
-				free_voice = v;
-				break;
-			}
+		// Try to find a voice that is not gated (not playing a note)
+		for (size_t i = 0; i < active_voice_count; ++i) {
+			if (!voice_ptrs[i]->gate) { return voice_ptrs[i]; }
 		}
 
-		if (!free_voice) {
-			free_voice = voice_ptrs.at(index_to_steal);
-
-			if (index_to_steal < voice_ptrs.size() - 1) {
-				index_to_steal++;
-			} else {
-				index_to_steal = 0;
-			}
-		}
-
-		return free_voice;
+		// If all voices are gated, steal one round-robin
+		auto voice = voice_ptrs[index_to_steal];
+		index_to_steal = (index_to_steal + 1) % active_voice_count;
+		return voice;
 	}
 
 	void process_events(int _start_index, int _block_size)
