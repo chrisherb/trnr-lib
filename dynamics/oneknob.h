@@ -1,28 +1,9 @@
 #pragma once
 #include "audio_math.h"
+#include "rms_detector.h"
 #include <cmath>
 
 namespace trnr {
-
-struct rms_detector {
-	float alpha;
-	float rms_squared;
-};
-
-inline void rms_init(rms_detector& det, float samplerate, float window_ms)
-{
-	float window_seconds = 0.001f * window_ms;
-	det.alpha = 1.0f - expf(-1.0f / (samplerate * window_seconds));
-	det.rms_squared = 0.0f;
-}
-
-template <typename sample>
-inline sample rms_process(rms_detector& det, sample input)
-{
-	det.rms_squared = (1.0f - det.alpha) * det.rms_squared + det.alpha * (input * input);
-	return sqrtf(det.rms_squared);
-}
-
 struct hp_filter {
 	float a0, a1, b1;
 	float z1; // filter state
@@ -30,7 +11,7 @@ struct hp_filter {
 
 inline void hp_filter_init(hp_filter& f, float samplerate)
 {
-	float cutoff = 100.0f;
+	const float cutoff = 100.0f;
 	float w0 = 2.0f * 3.14159265359f * cutoff / samplerate;
 	float alpha = (1.0f - std::tan(w0 / 2.0f)) / (1.0f + std::tan(w0 / 2.0f));
 	f.a0 = 0.5f * (1.0f + alpha);
@@ -59,44 +40,45 @@ struct oneknob_comp {
 	float sidechain_in;
 };
 
-inline void oneknob_init(oneknob_comp& comp, float samplerate, float window_ms)
+inline void oneknob_init(oneknob_comp& c, float samplerate, float window_ms)
 {
-	rms_init(comp.detector, samplerate, window_ms);
-	hp_filter_init(comp.filter, samplerate);
+	rms_init(c.detector, samplerate, window_ms);
+	hp_filter_init(c.filter, samplerate);
 
 	const float attack_ms = 0.2f;
 	const float release_ms = 150.f;
 
-	comp.attack_coef = expf(-1.0f / (attack_ms * 1e-6 * samplerate));
-	comp.release_coef = expf(-1.0f / (release_ms * 1e-3 * samplerate));
-	comp.envelope_level = -60.f;
-	comp.sidechain_in = 0.f;
+	// c.amount = 0.f;
+	c.attack_coef = expf(-1.0f / (attack_ms * 1e-6 * samplerate));
+	c.release_coef = expf(-1.0f / (release_ms * 1e-3 * samplerate));
+	c.envelope_level = -60.f;
+	c.sidechain_in = 0.f;
 }
 
 template <typename sample>
-inline void oneknob_process_block(oneknob_comp& comp, sample** audio, int frames)
+inline void oneknob_process_block(oneknob_comp& c, sample** audio, int frames)
 {
 	const float min_user_ratio = 1.0f;
 	const float max_user_ratio = 20.0f;
 	const float threshold_db = -9.f;
 
-	const float amount = fmaxf(0.0f, fminf(powf(comp.amount, 2.f), 1.0f)); // clamp to [0, 1]
+	const float amount = fmaxf(0.0f, fminf(powf(c.amount, 2.f), 1.0f)); // clamp to [0, 1]
 	float ratio = min_user_ratio + amount * (max_user_ratio - min_user_ratio);
 
 	for (int i = 0; i < frames; ++i) {
-		float rms_value = rms_process(comp.detector, comp.sidechain_in);
+		float rms_value = rms_process<sample>(c.detector, c.sidechain_in);
 		float envelope_in = lin_2_db(fmaxf(fabs(rms_value), 1e-20f));
 
 		// attack
-		if (envelope_in > comp.envelope_level) {
-			comp.envelope_level = envelope_in + comp.attack_coef * (comp.envelope_level - envelope_in);
+		if (envelope_in > c.envelope_level) {
+			c.envelope_level = envelope_in + c.attack_coef * (c.envelope_level - envelope_in);
 		}
 		// release
 		else {
-			comp.envelope_level = envelope_in + comp.release_coef * (comp.envelope_level - envelope_in);
+			c.envelope_level = envelope_in + c.release_coef * (c.envelope_level - envelope_in);
 		}
 
-		float x = comp.envelope_level;
+		float x = c.envelope_level;
 		float y;
 
 		if (x < threshold_db) y = x;
@@ -110,8 +92,7 @@ inline void oneknob_process_block(oneknob_comp& comp, sample** audio, int frames
 
 		// feedback compression
 		float sum = sqrtf(0.5f * (audio[0][i] * audio[0][i] + audio[1][i] * audio[1][i]));
-		comp.sidechain_in = hp_filter_process(comp.filter, sum);
+		c.sidechain_in = hp_filter_process(c.filter, sum);
 	}
 }
-
 } // namespace trnr
