@@ -29,7 +29,7 @@ inline float hp_filter_process(hp_filter& f, float x)
 
 struct oneknob_comp {
 	// params
-	float amount;
+	float amount = 0.f;
 
 	// state
 	rms_detector detector;
@@ -48,7 +48,6 @@ inline void oneknob_init(oneknob_comp& c, float samplerate, float window_ms)
 	const float attack_ms = 0.2f;
 	const float release_ms = 150.f;
 
-	// c.amount = 0.f;
 	c.attack_coef = expf(-1.0f / (attack_ms * 1e-6 * samplerate));
 	c.release_coef = expf(-1.0f / (release_ms * 1e-3 * samplerate));
 	c.envelope_level = -60.f;
