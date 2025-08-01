@@ -72,7 +72,7 @@ inline void oneknob_process_block(oneknob_comp& c, sample** audio, int frames)
 	const float slow_attack = 0.6f;
 	const float fast_release = 90.f;
 	const float slow_release = 300.f;
-	const float max_gr = 24.f;
+	const float max_gr = 12.f;
 
 	for (int i = 0; i < frames; ++i) {
 		float rms_value = rms_process<sample>(c.detector, c.sidechain_in);
