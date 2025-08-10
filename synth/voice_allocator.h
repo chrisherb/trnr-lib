@@ -1,6 +1,5 @@
 #pragma once
 #include "audio_buffer.h"
-#include "ivoice.h"
 #include "midi_event.h"
 
 #include <algorithm>
@@ -15,14 +14,15 @@ template <typename t_voice, typename t_sample>
 class voice_allocator {
 public:
 	std::vector<std::shared_ptr<t_voice>> voice_ptrs;
+	std::vector<midi_event> input_queue;
+	int index_to_steal = 0;
+	const int internal_block_size = 16;
+	size_t active_voice_count;
+	bool steal_non_gated = true;
 
 	voice_allocator(size_t num_voices = 1)
 	{
-		// checks whether template derives from ivoice
-		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
-
-		assert(num_voices > 0 && "voice_reserve must be greater than 0");
-
+		assert(num_voices > 0 && "number of voices must be greater than 0");
 		init_voice_ptrs(num_voices);
 	}
 
@@ -89,12 +89,6 @@ public:
 		for (const auto& v : voice_ptrs) { v->set_samplerate(_samplerate); }
 	}
 
-private:
-	std::vector<midi_event> input_queue;
-	int index_to_steal = 0;
-	const int internal_block_size = 16;
-	size_t active_voice_count;
-
 	void init_voice_ptrs(size_t num_voices)
 	{
 		voice_ptrs.reserve(num_voices);
@@ -114,13 +108,15 @@ private:
 	std::shared_ptr<t_voice> steal_voice()
 	{
 		// Try to find a voice that is not gated (not playing a note)
-		for (size_t i = 0; i < active_voice_count; ++i) {
-			if (!voice_ptrs[i]->gate) { return voice_ptrs[i]; }
-		}
+		if (steal_non_gated)
+			for (size_t i = 0; i < active_voice_count; ++i) {
+				if (!voice_ptrs[i]->gate) { return voice_ptrs[i]; }
+			}
 
 		// If all voices are gated, steal one round-robin
 		auto voice = voice_ptrs[index_to_steal];
-		index_to_steal = (index_to_steal + 1) % active_voice_count;
+		index_to_steal++;
+		if (index_to_steal >= active_voice_count) index_to_steal = 0;
 		return voice;
 	}
 

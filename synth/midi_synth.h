@@ -1,6 +1,5 @@
 #pragma once
 #include "audio_buffer.h"
-#include "ivoice.h"
 #include "midi_event.h"
 #include "voice_allocator.h"
 #include <cstddef>
@@ -14,12 +13,14 @@ namespace trnr {
 template <typename t_voice, typename t_sample>
 class midi_synth : public voice_allocator<t_voice, t_sample> {
 public:
+	std::vector<midi_event> m_event_queue;
+	int m_block_size;
+	bool m_voices_active;
+
 	midi_synth(size_t num_voices = 1)
 		: m_voices_active {false}
-		, trnr::voice_allocator<t_voice, t_sample>(num_voices)
+		, voice_allocator<t_voice, t_sample>(num_voices)
 	{
-		// checks whether template derives from ivoice
-		typedef t_voice assert_at_compile_time[is_convertible<t_voice, t_sample>::value ? 1 : -1];
 	}
 
 	void set_samplerate_blocksize(double _samplerate, int _block_size)
@@ -86,10 +87,5 @@ public:
 	{
 		for (int i = 0; i < m_event_queue.size(); i++) { m_event_queue.at(i).offset -= frames; }
 	}
-
-private:
-	std::vector<midi_event> m_event_queue;
-	int m_block_size;
-	bool m_voices_active;
 };
 } // namespace trnr
