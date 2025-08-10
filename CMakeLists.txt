@@ -11,4 +11,5 @@ target_include_directories(trnr-lib INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/oversampling
     ${CMAKE_CURRENT_SOURCE_DIR}/synth
     ${CMAKE_CURRENT_SOURCE_DIR}/util
+    ${CMAKE_CURRENT_SOURCE_DIR}/gfx
 )
