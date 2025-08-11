@@ -1,6 +1,7 @@
 #pragma once
+#include "audio_buffer.h"
 #include "audio_math.h"
-#include "synth.h"
+#include "voice_allocator.h"
 #include <cmath>
 #include <random>
 
@@ -312,15 +313,11 @@ inline float tx_operator_process_sample(tx_operator& op, bool gate, bool trigger
 
 constexpr float MOD_INDEX_COEFF = 4.f;
 
-struct tx_voice {
-	bool gate = false;
-	bool trigger = false;
-	int midi_note = 0;
-	float velocity = 1.f;
+struct tx_state {
 	float additional_pitch_mod = 0.f; // modulates pitch in frequency
-
 	int algorithm = 0;
 	float pitch_env_amt = 0.f;
+	float pitch_mod = 0.f;
 	float feedback_amt = 0.f;
 	float bit_resolution = 12.f;
 	tx_sineosc feedback_osc;
@@ -328,130 +325,404 @@ struct tx_voice {
 	tx_operator op1;
 	tx_operator op2;
 	tx_operator op3;
-
-	float pitch_mod = 0.f;
 };
 
-inline float calc_algo1(tx_voice& v, const float frequency)
+inline void tx_voice_process_block(tx_state& t, voice_state& s, float** audio, size_t num_frames,
+								   const vector<audio_buffer<float>>& mods)
 {
-	float fb_freq = frequency * v.op3.ratio;
-	float fb_mod_index = (v.feedback_amt * MOD_INDEX_COEFF);
-	float fb_signal = tx_sineosc_process_sample(v.feedback_osc, v.trigger, fb_freq) * fb_mod_index;
+	float frequency = midi_to_frequency(s.midi_note + t.pitch_mod + t.additional_pitch_mod);
 
-	float op3_Freq = frequency * v.op3.ratio;
-	float op3_mod_index = (v.op3.amplitude * MOD_INDEX_COEFF);
-	float op3_signal =
-		tx_operator_process_sample(v.op3, v.gate, v.trigger, op3_Freq, v.velocity, fb_signal) * op3_mod_index;
+	for (int i = 0; i < num_frames; i++) {
 
-	float op2_freq = frequency * v.op2.ratio;
-	float op2_mod_index = (v.op2.amplitude * MOD_INDEX_COEFF);
-	float op2_signal =
-		tx_operator_process_sample(v.op2, v.gate, v.trigger, op2_freq, v.velocity, op3_signal) * op2_mod_index;
+		voice_process_event_for_frame(s, i);
 
-	float op1_freq = frequency * v.op1.ratio;
-	return tx_operator_process_sample(v.op1, v.gate, v.trigger, op1_freq, v.velocity, op2_signal) * v.op1.amplitude;
-}
-
-inline float calc_algo2(tx_voice& v, const float frequency)
-{
-	float fb_freq = frequency * v.op3.ratio;
-	float fb_mod_index = (v.feedback_amt * MOD_INDEX_COEFF);
-	float fb_signal = tx_sineosc_process_sample(v.feedback_osc, v.trigger, fb_freq) * fb_mod_index;
-
-	float op3_freq = frequency * v.op3.ratio;
-	float op3_signal =
-		tx_operator_process_sample(v.op3, v.gate, v.trigger, op3_freq, v.velocity, fb_signal) * v.op3.amplitude;
-
-	float op2_freq = frequency * v.op2.ratio;
-	float op2_mod_index = (v.op2.amplitude * MOD_INDEX_COEFF);
-	float op2_signal = tx_operator_process_sample(v.op2, v.gate, v.trigger, op2_freq, v.velocity) * op2_mod_index;
-
-	float op1_freq = frequency * v.op1.ratio;
-	float op1_signal =
-		tx_operator_process_sample(v.op1, v.gate, v.trigger, op1_freq, v.velocity, op2_signal) * v.op1.amplitude;
-
-	return op1_signal + op3_signal;
-}
-
-inline float calc_algo3(tx_voice& v, const float frequency)
-{
-	float fb_freq = frequency * v.op3.ratio;
-	float fb_mod_index = (v.feedback_amt * MOD_INDEX_COEFF);
-	float fb_signal = tx_sineosc_process_sample(v.feedback_osc, v.trigger, fb_freq) * fb_mod_index;
-
-	float op3_freq = frequency * v.op3.ratio;
-	float op3_signal =
-		tx_operator_process_sample(v.op3, v.gate, v.trigger, op3_freq, v.velocity, fb_signal) * v.op3.amplitude;
-
-	float op2_freq = frequency * v.op2.ratio;
-	float op2_signal = tx_operator_process_sample(v.op2, v.gate, v.trigger, op2_freq, v.velocity) * v.op2.amplitude;
-
-	float op1_freq = frequency * v.op1.ratio;
-	float op1_signal = tx_operator_process_sample(v.op1, v.gate, v.trigger, op1_freq, v.velocity) * v.op1.amplitude;
-
-	return op1_signal + op2_signal + op3_signal;
-}
-
-inline float calc_algo4(tx_voice& v, const float frequency)
-{
-	float fb_freq = frequency * v.op3.ratio;
-	float fb_mod_index = (v.feedback_amt * MOD_INDEX_COEFF);
-	float fb_signal = tx_sineosc_process_sample(v.feedback_osc, v.trigger, fb_freq) * fb_mod_index;
-
-	float op3_freq = frequency * v.op3.ratio;
-	float op3_mod_index = (v.op3.amplitude * MOD_INDEX_COEFF);
-	float op3_signal =
-		tx_operator_process_sample(v.op3, v.gate, v.trigger, op3_freq, v.velocity, fb_signal) * op3_mod_index;
-
-	float op2_freq = frequency * v.op2.ratio;
-	float op2_mod_index = (v.op2.amplitude * MOD_INDEX_COEFF);
-	float op2_signal = tx_operator_process_sample(v.op2, v.gate, v.trigger, op2_freq, v.velocity) * op2_mod_index;
-
-	float op1_freq = frequency * v.op1.ratio;
-	return tx_operator_process_sample(v.op1, v.gate, v.trigger, op1_freq, v.velocity, op2_signal + op3_signal) *
-		   v.op1.amplitude;
-}
-
-template <>
-inline void voice_process_block<tx_voice, float>(tx_voice& v, float** frames, size_t num_frames, midi_event* events,
-												 size_t num_events, const vector<audio_buffer<float>>& mods)
-{
-	float frequency = midi_to_frequency(v.midi_note + v.pitch_mod + v.additional_pitch_mod);
-
-	for (int s = 0; s < num_frames; s++) {
-
-		float pitch_env_signal = tx_envelope_process_sample(v.pitch_env, v.gate, v.trigger) * v.pitch_env_amt;
+		float pitch_env_signal = tx_envelope_process_sample(t.pitch_env, s.gate, s.trigger) * t.pitch_env_amt;
 		float pitched_freq = frequency + pitch_env_signal;
 
 		float output = 0.f;
 
 		// mix operator signals according to selected algorithm
-		switch (v.algorithm) {
-		case 0:
-			output = calc_algo1(v, pitched_freq);
-			break;
-		case 1:
-			output = calc_algo2(v, pitched_freq);
-			break;
-		case 2:
-			output = calc_algo3(v, pitched_freq);
-			break;
-		case 3:
-			output = calc_algo4(v, pitched_freq);
-			break;
-		default:
-			output = calc_algo1(v, pitched_freq);
-			break;
+		if (t.algorithm == 0) {
+			float fb_freq = frequency * t.op3.ratio;
+			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
+			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+
+			float op3_Freq = frequency * t.op3.ratio;
+			float op3_mod_index = (t.op3.amplitude * MOD_INDEX_COEFF);
+			float op3_signal =
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_Freq, s.velocity, fb_signal) * op3_mod_index;
+
+			float op2_freq = frequency * t.op2.ratio;
+			float op2_mod_index = (t.op2.amplitude * MOD_INDEX_COEFF);
+			float op2_signal =
+				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity, op3_signal) * op2_mod_index;
+
+			float op1_freq = frequency * t.op1.ratio;
+			output = tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity, op2_signal) *
+					 t.op1.amplitude;
+		} else if (t.algorithm == 1) {
+			float fb_freq = frequency * t.op3.ratio;
+			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
+			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+
+			float op3_freq = frequency * t.op3.ratio;
+			float op3_signal =
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity, fb_signal) * t.op3.amplitude;
+
+			float op2_freq = frequency * t.op2.ratio;
+			float op2_mod_index = (t.op2.amplitude * MOD_INDEX_COEFF);
+			float op2_signal =
+				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity) * op2_mod_index;
+
+			float op1_freq = frequency * t.op1.ratio;
+			float op1_signal = tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity, op2_signal) *
+							   t.op1.amplitude;
+
+			output = op1_signal + op3_signal;
+		} else if (t.algorithm == 2) {
+			float fb_freq = frequency * t.op3.ratio;
+			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
+			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+
+			float op3_freq = frequency * t.op3.ratio;
+			float op3_signal =
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity, fb_signal) * t.op3.amplitude;
+
+			float op2_freq = frequency * t.op2.ratio;
+			float op2_signal =
+				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity) * t.op2.amplitude;
+
+			float op1_freq = frequency * t.op1.ratio;
+			float op1_signal =
+				tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity) * t.op1.amplitude;
+
+			output = op1_signal + op2_signal + op3_signal;
+		} else if (t.algorithm == 3) {
+			float fb_freq = frequency * t.op3.ratio;
+			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
+			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+
+			float op3_freq = frequency * t.op3.ratio;
+			float op3_mod_index = (t.op3.amplitude * MOD_INDEX_COEFF);
+			float op3_signal =
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity, fb_signal) * op3_mod_index;
+
+			float op2_freq = frequency * t.op2.ratio;
+			float op2_mod_index = (t.op2.amplitude * MOD_INDEX_COEFF);
+			float op2_signal =
+				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity) * op2_mod_index;
+
+			float op1_freq = frequency * t.op1.ratio;
+			output =
+				tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity, op2_signal + op3_signal) *
+				t.op1.amplitude;
 		}
 
 		// reset trigger
-		v.trigger = false;
+		s.trigger = false;
 
-		float res = powf(2, v.bit_resolution);
+		float res = powf(2, t.bit_resolution);
 		output = roundf(output * res) / res;
 
-		frames[0][s] += output / 3.;
-		frames[1][s] = frames[0][s];
+		audio[0][i] += output / 3.;
+		audio[1][i] = audio[0][i];
+	}
+}
+
+enum tx_parameter {
+	BIT_RESOLUTION = 0,
+	FEEDBACKOSC_PHASE_RESOLUTION,
+	FEEDBACK,
+	ALGORITHM,
+
+	PITCH_ENVELOPE_AMOUNT,
+	PITCH_ENVELOPE_SKIP_SUSTAIN,
+	PITCH_ENVELOPE_ATTACK1_RATE,
+	PITCH_ENVELOPE_ATTACK1_LEVEL,
+	PITCH_ENVELOPE_ATTACK2_RATE,
+	PITCH_ENVELOPE_HOLD_RATE,
+	PITCH_ENVELOPE_DECAY1_RATE,
+	PITCH_ENVELOPE_DECAY1_LEVEL,
+	PITCH_ENVELOPE_DECAY2_RATE,
+	PITCH_ENVELOPE_SUSTAIN_LEVEL,
+	PITCH_ENVELOPE_RELEASE1_RATE,
+	PITCH_ENVELOPE_RELEASE1_LEVEL,
+	PITCH_ENVELOPE_RELEASE2_RATE,
+
+	OP1_RATIO,
+	OP1_AMPLITUDE,
+	OP1_PHASE_RESOLUTION,
+	OP1_ENVELOPE_SKIP_SUSTAIN,
+	OP1_ENVELOPE_ATTACK1_RATE,
+	OP1_ENVELOPE_ATTACK1_LEVEL,
+	OP1_ENVELOPE_ATTACK2_RATE,
+	OP1_ENVELOPE_HOLD_RATE,
+	OP1_ENVELOPE_DECAY1_RATE,
+	OP1_ENVELOPE_DECAY1_LEVEL,
+	OP1_ENVELOPE_DECAY2_RATE,
+	OP1_ENVELOPE_SUSTAIN_LEVEL,
+	OP1_ENVELOPE_RELEASE1_RATE,
+	OP1_ENVELOPE_RELEASE1_LEVEL,
+	OP1_ENVELOPE_RELEASE2_RATE,
+
+	OP2_RATIO,
+	OP2_AMPLITUDE,
+	OP2_PHASE_RESOLUTION,
+	OP2_ENVELOPE_SKIP_SUSTAIN,
+	OP2_ENVELOPE_ATTACK1_RATE,
+	OP2_ENVELOPE_ATTACK1_LEVEL,
+	OP2_ENVELOPE_ATTACK2_RATE,
+	OP2_ENVELOPE_HOLD_RATE,
+	OP2_ENVELOPE_DECAY1_RATE,
+	OP2_ENVELOPE_DECAY1_LEVEL,
+	OP2_ENVELOPE_DECAY2_RATE,
+	OP2_ENVELOPE_SUSTAIN_LEVEL,
+	OP2_ENVELOPE_RELEASE1_RATE,
+	OP2_ENVELOPE_RELEASE1_LEVEL,
+	OP2_ENVELOPE_RELEASE2_RATE,
+
+	OP3_RATIO,
+	OP3_AMPLITUDE,
+	OP3_PHASE_RESOLUTION,
+	OP3_ENVELOPE_SKIP_SUSTAIN,
+	OP3_ENVELOPE_ATTACK1_RATE,
+	OP3_ENVELOPE_ATTACK1_LEVEL,
+	OP3_ENVELOPE_ATTACK2_RATE,
+	OP3_ENVELOPE_HOLD_RATE,
+	OP3_ENVELOPE_DECAY1_RATE,
+	OP3_ENVELOPE_DECAY1_LEVEL,
+	OP3_ENVELOPE_DECAY2_RATE,
+	OP3_ENVELOPE_SUSTAIN_LEVEL,
+	OP3_ENVELOPE_RELEASE1_RATE,
+	OP3_ENVELOPE_RELEASE1_LEVEL,
+	OP3_ENVELOPE_RELEASE2_RATE,
+};
+
+struct tx_parameter_mapping {
+	float range_min;
+	float range_max;
+	float exponent;
+	tx_parameter parameter;
+
+	float apply(float _input) const
+	{
+		if (range_min == range_max && exponent == 1.f) return _input;
+
+		return powf(_input, exponent) * (range_max - range_min) + range_min;
+	}
+};
+
+struct tx_synth {
+	voice_allocator allocator;
+	array<tx_state, MAX_VOICES> voices;
+};
+
+inline void tx_synth_process_block(tx_synth& s, float** audio, size_t num_frames, const vector<midi_event>& midi_events,
+								   const vector<audio_buffer<float>>& mods)
+{
+	voice_allocator_process_block(s.allocator, midi_events);
+
+	for (int i = 0; i < MAX_VOICES; i++) {
+		tx_voice_process_block(s.voices[i], s.allocator.voices[i], audio, num_frames, mods);
+	}
+}
+
+inline void tx_apply_parameter_mapping(array<tx_state, MAX_VOICES>& v, tx_parameter_mapping& m, float value)
+{
+	if (m.range_min != m.range_max || m.exponent != 1.f)
+		value = powf(value, m.exponent) * (m.range_max - m.range_min) + m.range_min;
+
+	for (int i = 0; i < MAX_VOICES; i++) {
+		tx_state& s = v[i];
+
+		switch (m.parameter) {
+		case tx_parameter::BIT_RESOLUTION:
+			s.bit_resolution = value;
+			break;
+		case tx_parameter::FEEDBACKOSC_PHASE_RESOLUTION:
+			s.feedback_osc.phase_resolution = value;
+			break;
+		case tx_parameter::FEEDBACK:
+			s.feedback_amt = value;
+			break;
+		case tx_parameter::ALGORITHM:
+			s.algorithm = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_AMOUNT:
+			s.pitch_env_amt = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_SKIP_SUSTAIN:
+			s.pitch_env.skip_sustain = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_ATTACK1_RATE:
+			s.pitch_env.attack1_rate = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_ATTACK1_LEVEL:
+			s.pitch_env.attack1_level = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_ATTACK2_RATE:
+			s.pitch_env.attack2_rate = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_HOLD_RATE:
+			s.pitch_env.hold_rate = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_DECAY1_RATE:
+			s.pitch_env.decay1_rate = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_DECAY1_LEVEL:
+			s.pitch_env.decay1_level = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_DECAY2_RATE:
+			s.pitch_env.decay2_rate = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_SUSTAIN_LEVEL:
+			s.pitch_env.sustain_level = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_RELEASE1_RATE:
+			s.pitch_env.release1_rate = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_RELEASE1_LEVEL:
+			s.pitch_env.release1_level = value;
+			break;
+		case tx_parameter::PITCH_ENVELOPE_RELEASE2_RATE:
+			s.pitch_env.release2_rate = value;
+			break;
+		case tx_parameter::OP1_RATIO:
+			s.op1.ratio = value;
+			break;
+		case tx_parameter::OP1_AMPLITUDE:
+			s.op1.amplitude = value;
+			break;
+		case tx_parameter::OP1_PHASE_RESOLUTION:
+			s.op1.oscillator.phase_resolution = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_SKIP_SUSTAIN:
+			s.op1.envelope.skip_sustain = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_ATTACK1_RATE:
+			s.op1.envelope.attack1_rate = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_ATTACK1_LEVEL:
+			s.op1.envelope.attack1_level = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_ATTACK2_RATE:
+			s.op1.envelope.attack2_rate = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_HOLD_RATE:
+			s.op1.envelope.hold_rate = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_DECAY1_RATE:
+			s.op1.envelope.decay1_rate = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_DECAY1_LEVEL:
+			s.op1.envelope.decay1_level = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_DECAY2_RATE:
+			s.op1.envelope.decay2_rate = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_SUSTAIN_LEVEL:
+			s.op1.envelope.sustain_level = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_RELEASE1_RATE:
+			s.op1.envelope.release1_rate = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_RELEASE1_LEVEL:
+			s.op1.envelope.release1_level = value;
+			break;
+		case tx_parameter::OP1_ENVELOPE_RELEASE2_RATE:
+			s.op1.envelope.release2_rate = value;
+			break;
+		case tx_parameter::OP2_RATIO:
+			s.op2.ratio = value;
+			break;
+		case tx_parameter::OP2_AMPLITUDE:
+			s.op2.amplitude = value;
+			break;
+		case tx_parameter::OP2_PHASE_RESOLUTION:
+			s.op2.oscillator.phase_resolution = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_SKIP_SUSTAIN:
+			s.op2.envelope.skip_sustain = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_ATTACK1_RATE:
+			s.op2.envelope.attack1_rate = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_ATTACK1_LEVEL:
+			s.op2.envelope.attack1_level = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_ATTACK2_RATE:
+			s.op2.envelope.attack2_rate = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_HOLD_RATE:
+			s.op2.envelope.hold_rate = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_DECAY1_RATE:
+			s.op2.envelope.decay1_rate = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_DECAY1_LEVEL:
+			s.op2.envelope.decay1_level = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_DECAY2_RATE:
+			s.op2.envelope.decay2_rate = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_SUSTAIN_LEVEL:
+			s.op2.envelope.sustain_level = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_RELEASE1_RATE:
+			s.op2.envelope.release1_rate = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_RELEASE1_LEVEL:
+			s.op2.envelope.release1_level = value;
+			break;
+		case tx_parameter::OP2_ENVELOPE_RELEASE2_RATE:
+			s.op2.envelope.release2_rate = value;
+			break;
+		case tx_parameter::OP3_RATIO:
+			s.op3.ratio = value;
+			break;
+		case tx_parameter::OP3_AMPLITUDE:
+			s.op3.amplitude = value;
+			break;
+		case tx_parameter::OP3_PHASE_RESOLUTION:
+			s.op3.oscillator.phase_resolution = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_SKIP_SUSTAIN:
+			s.op3.envelope.skip_sustain = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_ATTACK1_RATE:
+			s.op3.envelope.attack1_rate = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_ATTACK1_LEVEL:
+			s.op3.envelope.attack1_level = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_ATTACK2_RATE:
+			s.op3.envelope.attack2_rate = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_HOLD_RATE:
+			s.op3.envelope.hold_rate = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_DECAY1_RATE:
+			s.op3.envelope.decay1_rate = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_DECAY1_LEVEL:
+			s.op3.envelope.decay1_level = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_DECAY2_RATE:
+			s.op3.envelope.decay2_rate = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_SUSTAIN_LEVEL:
+			s.op3.envelope.sustain_level = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_RELEASE1_RATE:
+			s.op3.envelope.release1_rate = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_RELEASE1_LEVEL:
+			s.op3.envelope.release1_level = value;
+			break;
+		case tx_parameter::OP3_ENVELOPE_RELEASE2_RATE:
+			s.op3.envelope.release2_rate = value;
+			break;
+		}
 	}
 }
 
