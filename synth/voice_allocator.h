@@ -95,7 +95,9 @@ inline void voice_allocator_process_block(voice_allocator& va, const vector<midi
 			// attempt to find a free voice
 			for (size_t i = 0; i < va.active_voice_count; ++i) {
 				if (!va.voices[i].is_busy) {
-					va.voices[i].events[va.voices[i].event_count++] = ev;
+					voice_state& found_voice = va.voices[i];
+					found_voice.is_busy = true;
+					found_voice.events[va.voices[i].event_count++] = ev;
 					found = true;
 					break;
 				}
@@ -103,19 +105,10 @@ inline void voice_allocator_process_block(voice_allocator& va, const vector<midi
 
 			if (found) break;
 
-			// try to find a voice that is not gated
-			for (size_t i = 0; i < va.active_voice_count; ++i) {
-				if (!va.voices[i].gate) {
-					va.voices[i].events[va.voices[i].event_count++] = ev;
-					found = true;
-					break;
-				}
-			}
-
-			if (found) break;
-
-			// if all voices are gated, steal one round-robin
-			va.voices[va.index_to_steal].events[va.voices[va.index_to_steal].event_count++] = ev;
+			// if all voices are busy, steal one round-robin
+			voice_state& found_voice = va.voices[va.index_to_steal];
+			found_voice.is_busy = true;
+			found_voice.events[va.voices[va.index_to_steal].event_count++] = ev;
 			va.index_to_steal++;
 			if (va.index_to_steal >= va.active_voice_count) va.index_to_steal = 0;
 			break;
