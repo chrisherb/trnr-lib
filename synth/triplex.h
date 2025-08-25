@@ -327,8 +327,17 @@ struct tx_state {
 	tx_operator op3;
 };
 
+inline void tx_voice_init(tx_state& s, double samplerate)
+{
+	tx_sineosc_init(s.feedback_osc, samplerate);
+	tx_envelope_init(s.pitch_env, samplerate);
+	tx_operator_init(s.op1, samplerate);
+	tx_operator_init(s.op2, samplerate);
+	tx_operator_init(s.op3, samplerate);
+}
+
 inline void tx_voice_process_block(tx_state& t, voice_state& s, float** audio, size_t num_frames,
-								   const vector<audio_buffer<float>>& mods)
+								   const vector<audio_buffer<float>>& mods = {})
 {
 	float frequency = midi_to_frequency(s.midi_note + t.pitch_mod + t.additional_pitch_mod);
 
@@ -517,12 +526,20 @@ struct tx_synth {
 	array<tx_state, MAX_VOICES> voices;
 };
 
-inline void tx_synth_process_block(tx_synth& s, float** audio, size_t num_frames, const vector<midi_event>& midi_events,
-								   const vector<audio_buffer<float>>& mods)
+inline void tx_synth_init(tx_synth& s, double samplerate)
 {
+	voice_allocator_init(s.allocator);
+	for (int i = 0; i < MAX_VOICES; i++) { tx_voice_init(s.voices[i], samplerate); }
+}
+
+inline void tx_synth_process_block(tx_synth& s, float** audio, size_t num_frames, const vector<midi_event>& midi_events,
+								   const vector<audio_buffer<float>>& mods = {})
+{
+	for (int i = 0; i < num_frames; i++) { audio[0][i] = audio[1][i] = 0.f; } // clear audio buffers
+
 	voice_allocator_process_block(s.allocator, midi_events);
 
-	for (int i = 0; i < MAX_VOICES; i++) {
+	for (int i = 0; i < s.allocator.active_voice_count; i++) {
 		tx_voice_process_block(s.voices[i], s.allocator.voices[i], audio, num_frames, mods);
 	}
 }
@@ -726,4 +743,9 @@ inline void tx_apply_parameter_mapping(array<tx_state, MAX_VOICES>& v, tx_parame
 	}
 }
 
+inline void tx_apply_parameter_mappings(array<tx_state, MAX_VOICES>& v, std::vector<tx_parameter_mapping>& m,
+										float value)
+{
+	for (int i = 0; i < m.size(); i++) { tx_apply_parameter_mapping(v, m[i], value); }
+}
 } // namespace trnr

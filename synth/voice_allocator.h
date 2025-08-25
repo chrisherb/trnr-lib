@@ -61,10 +61,10 @@ inline void make_mod_wheel(midi_event& ev, double _mod, int _offset = 0)
 
 struct voice_state {
 	int midi_note;
-	bool is_busy;
-	bool gate;
-	bool trigger;
-	float velocity;
+	bool is_busy = false;
+	bool gate = false;
+	bool trigger = false;
+	float velocity = 0.0f;
 	array<midi_event, MAX_EVENTS_PER_VOICE> events;
 	size_t event_count = 0;
 };
@@ -132,7 +132,7 @@ inline void voice_process_event_for_frame(voice_state& v, size_t frame)
 {
 	const midi_event* best_event = nullptr;
 
-	for (int i = 0; i < v.events.size(); i++) {
+	for (int i = 0; i < v.event_count; i++) {
 		const midi_event& ev = v.events[i];
 		if (ev.offset == frame) {
 			best_event = &ev;
