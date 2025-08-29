@@ -97,6 +97,8 @@ inline void voice_allocator_process_block(voice_allocator& va, const vector<midi
 				if (!va.voices[i].is_busy) {
 					voice_state& found_voice = va.voices[i];
 					found_voice.is_busy = true;
+					found_voice.midi_note = ev.midi_note;
+					found_voice.velocity = ev.velocity;
 					found_voice.events[va.voices[i].event_count++] = ev;
 					found = true;
 					break;
@@ -108,6 +110,8 @@ inline void voice_allocator_process_block(voice_allocator& va, const vector<midi
 			// if all voices are busy, steal one round-robin
 			voice_state& found_voice = va.voices[va.index_to_steal];
 			found_voice.is_busy = true;
+			found_voice.midi_note = ev.midi_note;
+			found_voice.velocity = ev.velocity;
 			found_voice.events[va.voices[va.index_to_steal].event_count++] = ev;
 			va.index_to_steal++;
 			if (va.index_to_steal >= va.active_voice_count) va.index_to_steal = 0;
