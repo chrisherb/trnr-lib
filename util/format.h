@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdarg>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,5 +25,12 @@ inline std::string format(const char* fmt, ...)
 	va_end(args);
 
 	return std::string(buf.data(), needed);
+}
+
+inline std::string to_string_trimmed(double value)
+{
+	std::ostringstream oss;
+	oss << std::defaultfloat << value;
+	return oss.str();
 }
 } // namespace trnr
