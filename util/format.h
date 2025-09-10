@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdarg>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -27,10 +28,16 @@ inline std::string format(const char* fmt, ...)
 	return std::string(buf.data(), needed);
 }
 
-inline std::string to_string_trimmed(double value)
+inline std::string float_to_string_trimmed(float value)
 {
-	std::ostringstream oss;
-	oss << std::defaultfloat << value;
-	return oss.str();
+	std::ostringstream out;
+	out << std::fixed << std::setprecision(2) << value;
+	std::string str = out.str();
+
+	// Remove trailing zeros
+	str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+	// If the last character is a decimal point, remove it as well
+	if (!str.empty() && str.back() == '.') { str.pop_back(); }
+	return str;
 }
 } // namespace trnr
