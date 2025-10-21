@@ -12,4 +12,6 @@ inline double lin_2_db(double lin)
 inline double db_2_lin(double db) { return pow(10.0, db / 20.0); }
 
 inline float midi_to_frequency(float midi_note) { return 440.0 * powf(2.0, ((float)midi_note - 69.0) / 12.0); }
+
+inline float ms_to_samples(float ms, double sample_rate) { return (ms * 0.001f) * (float)sample_rate; }
 } // namespace trnr

@@ -1,5 +1,6 @@
 #pragma once
 #include "audio_math.h"
+#include "smoother.h"
 #include <cmath>
 #include <vector>
 
@@ -224,6 +225,11 @@ inline void aw_filter_process_block(aw_filter& f, float* audio, int frames)
 	}
 }
 
+enum spliteq_mode {
+	CASCADE_SUM,
+	LINKWITZ_RILEY
+};
+
 struct spliteq {
 	aw_filter lp_l, lp_r, hp_l, hp_r; // lowpass and highpass filters
 
@@ -257,7 +263,10 @@ struct spliteq {
 	float mid_gain_adj = 1.0f;
 	float treble_gain_adj = 1.0f;
 
-	bool linkwitz_riley_enabled = false;
+	spliteq_mode current_mode = LINKWITZ_RILEY;
+	spliteq_mode target_mode = LINKWITZ_RILEY;
+	bool transitioning = false;
+	smoother transition_smoother;
 };
 
 inline void spliteq_init(spliteq& eq, double samplerate, double low_mid_crossover, double mid_high_crossover)
@@ -367,86 +376,121 @@ inline void spliteq_init(spliteq& eq, double samplerate, double low_mid_crossove
 	eq.treble2_r.cutoff = mid_high_crossover;
 	eq.treble2_r.x1 = eq.treble2_r.x2 = eq.treble2_r.y1 = eq.treble2_r.y2 = 0.0;
 	butterworth_biquad_coeffs(eq.treble2_r, samplerate);
+
+	smoother_init(eq.transition_smoother, samplerate, 50.0f, 1.0f);
 }
 
-// Process block (stereo)
+inline void spliteq_set_mode(spliteq& eq, spliteq_mode mode)
+{
+	if (eq.target_mode != mode) {
+		eq.target_mode = mode;
+		eq.transitioning = true;
+		smoother_set_target(eq.transition_smoother, 0.0f);
+	}
+}
+
+inline void linkwitz_riley_process(spliteq& eq, float**& audio, int& i)
+{
+	// left channel
+	double input_l = audio[0][i];
+	// bass
+	double bass_l = butterworth_biquad_process(eq.bass1_l, input_l);
+	bass_l = butterworth_biquad_process(eq.bass2_l, bass_l);
+	// mid
+	double mid_l = butterworth_biquad_process(eq.mid_hp1_l, input_l);
+	mid_l = butterworth_biquad_process(eq.mid_hp2_l, mid_l);
+	mid_l = butterworth_biquad_process(eq.mid_lp1_l, mid_l);
+	mid_l = butterworth_biquad_process(eq.mid_lp2_l, mid_l);
+	// treble
+	double treble_l = butterworth_biquad_process(eq.treble1_l, input_l);
+	treble_l = butterworth_biquad_process(eq.treble2_l, treble_l);
+
+	// apply gains
+	bass_l *= eq.bass_gain;
+	mid_l *= eq.mid_gain;
+	treble_l *= eq.treble_gain;
+
+	// sum bands
+	audio[0][i] = bass_l + mid_l + treble_l;
+
+	// right channel
+	double input_r = audio[1][i];
+	double bass_r = butterworth_biquad_process(eq.bass1_r, input_r);
+	bass_r = butterworth_biquad_process(eq.bass2_r, bass_r);
+
+	double mid_r = butterworth_biquad_process(eq.mid_hp1_r, input_r);
+	mid_r = butterworth_biquad_process(eq.mid_hp2_r, mid_r);
+	mid_r = butterworth_biquad_process(eq.mid_lp1_r, mid_r);
+	mid_r = butterworth_biquad_process(eq.mid_lp2_r, mid_r);
+
+	double treble_r = butterworth_biquad_process(eq.treble1_r, input_r);
+	treble_r = butterworth_biquad_process(eq.treble2_r, treble_r);
+
+	bass_r *= eq.bass_gain;
+	mid_r *= eq.mid_gain;
+	treble_r *= eq.treble_gain;
+
+	audio[1][i] = bass_r + mid_r + treble_r;
+}
+
+inline void cascade_sum_process(spliteq& eq, float**& audio, int& i)
+{
+	double input_l = audio[0][i];
+	double input_r = audio[1][i];
+
+	double bass_l = cascade_filter_process(eq.bass_l, input_l);
+	double bass_r = cascade_filter_process(eq.bass_r, input_r);
+
+	double treble_l = cascade_filter_process(eq.treble_l, input_l);
+	double treble_r = cascade_filter_process(eq.treble_r, input_r);
+
+	double mid_l = input_l - bass_l - treble_l;
+	double mid_r = input_r - bass_r - treble_r;
+
+	// apply gains
+	bass_l *= eq.bass_gain_adj;
+	bass_r *= eq.bass_gain_adj;
+	mid_l *= eq.mid_gain_adj;
+	mid_r *= eq.mid_gain_adj;
+	treble_l *= eq.treble_gain_adj;
+	treble_r *= eq.treble_gain_adj;
+
+	// sum bands
+	audio[0][i] = bass_l + mid_l + treble_l;
+	audio[1][i] = bass_r + mid_r + treble_r;
+}
+
 inline void spliteq_process_block(spliteq& eq, float** audio, int frames)
 {
+	// highpass filters
 	aw_filter_process_block(eq.hp_l, audio[0], frames);
 	aw_filter_process_block(eq.hp_r, audio[1], frames);
 
 	for (int i = 0; i < frames; i++) {
-		if (eq.linkwitz_riley_enabled) {
-			// butterwort/linkwitz-riley
+		float smooth_gain = 1.0f;
 
-			// Left channel
-			double input_l = audio[0][i];
-			// Bass
-			double bass_l = butterworth_biquad_process(eq.bass1_l, input_l);
-			bass_l = butterworth_biquad_process(eq.bass2_l, bass_l);
-			// Mid
-			double mid_l = butterworth_biquad_process(eq.mid_hp1_l, input_l);
-			mid_l = butterworth_biquad_process(eq.mid_hp2_l, mid_l);
-			mid_l = butterworth_biquad_process(eq.mid_lp1_l, mid_l);
-			mid_l = butterworth_biquad_process(eq.mid_lp2_l, mid_l);
-			// Treble
-			double treble_l = butterworth_biquad_process(eq.treble1_l, input_l);
-			treble_l = butterworth_biquad_process(eq.treble2_l, treble_l);
+		if (eq.transitioning) {
+			smooth_gain = smoother_process_sample(eq.transition_smoother);
 
-			// Apply gains
-			bass_l *= eq.bass_gain;
-			mid_l *= eq.mid_gain;
-			treble_l *= eq.treble_gain;
-
-			// Sum bands
-			audio[0][i] = bass_l + mid_l + treble_l;
-
-			// Right channel
-			double input_r = audio[1][i];
-			double bass_r = butterworth_biquad_process(eq.bass1_r, input_r);
-			bass_r = butterworth_biquad_process(eq.bass2_r, bass_r);
-
-			double mid_r = butterworth_biquad_process(eq.mid_hp1_r, input_r);
-			mid_r = butterworth_biquad_process(eq.mid_hp2_r, mid_r);
-			mid_r = butterworth_biquad_process(eq.mid_lp1_r, mid_r);
-			mid_r = butterworth_biquad_process(eq.mid_lp2_r, mid_r);
-
-			double treble_r = butterworth_biquad_process(eq.treble1_r, input_r);
-			treble_r = butterworth_biquad_process(eq.treble2_r, treble_r);
-
-			bass_r *= eq.bass_gain;
-			mid_r *= eq.mid_gain;
-			treble_r *= eq.treble_gain;
-
-			audio[1][i] = bass_r + mid_r + treble_r;
-		} else {
-			// cascade/sum
-			double input_l = audio[0][i];
-			double input_r = audio[1][i];
-
-			double bass_l = cascade_filter_process(eq.bass_l, input_l);
-			double bass_r = cascade_filter_process(eq.bass_r, input_r);
-
-			double treble_l = cascade_filter_process(eq.treble_l, input_l);
-			double treble_r = cascade_filter_process(eq.treble_r, input_r);
-
-			double mid_l = input_l - bass_l - treble_l;
-			double mid_r = input_r - bass_r - treble_r;
-
-			// Apply gains
-			bass_l *= eq.bass_gain_adj;
-			bass_r *= eq.bass_gain_adj;
-			mid_l *= eq.mid_gain_adj;
-			mid_r *= eq.mid_gain_adj;
-			treble_l *= eq.treble_gain_adj;
-			treble_r *= eq.treble_gain_adj;
-
-			// Sum bands
-			audio[0][i] = bass_l + mid_l + treble_l;
-			audio[1][i] = bass_r + mid_r + treble_r;
+			if (smooth_gain == 0.f) {
+				smoother_set_target(eq.transition_smoother, 1.0);
+				eq.current_mode = eq.target_mode;
+			} else if (smooth_gain == 1.f) {
+				eq.transitioning = false;
+			}
 		}
+
+		if (eq.current_mode == LINKWITZ_RILEY) {
+			linkwitz_riley_process(eq, audio, i);
+		} else if (eq.current_mode == CASCADE_SUM) {
+			cascade_sum_process(eq, audio, i);
+		}
+
+		audio[0][i] *= smooth_gain;
+		audio[1][i] *= smooth_gain;
 	}
 
+	// lowpass filters
 	aw_filter_process_block(eq.lp_l, audio[0], frames);
 	aw_filter_process_block(eq.lp_r, audio[1], frames);
 }
