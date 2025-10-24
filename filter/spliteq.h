@@ -263,8 +263,8 @@ struct spliteq {
 	float mid_gain_adj = 1.0f;
 	float treble_gain_adj = 1.0f;
 
-	spliteq_mode current_mode = LINKWITZ_RILEY;
-	spliteq_mode target_mode = LINKWITZ_RILEY;
+	spliteq_mode current_mode = CASCADE_SUM;
+	spliteq_mode target_mode = CASCADE_SUM;
 	bool transitioning = false;
 	smoother transition_smoother;
 };
