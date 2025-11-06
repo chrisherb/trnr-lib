@@ -1,3 +1,26 @@
+/*
+ * voice_allocator.h
+ * Copyright (c) 2025 Christopher Herb
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #pragma once
 
 #include <array>
@@ -31,7 +54,8 @@ inline void make_note_on(midi_event& ev, int _midi_note, float _velocity, int _o
 	ev.offset = _offset;
 }
 
-inline void make_note_off(midi_event& ev, int _midi_note, float _velocity, int _offset = 0)
+inline void make_note_off(midi_event& ev, int _midi_note, float _velocity,
+						  int _offset = 0)
 {
 	ev.type = midi_event_type::NOTE_OFF;
 	ev.midi_note = _midi_note;
@@ -80,11 +104,14 @@ inline void voice_allocator_init(voice_allocator& va)
 	for (size_t i = 0; i < MAX_VOICES; ++i) { va.voices[i].event_count = 0; }
 }
 
-inline void voice_allocator_process_block(voice_allocator& va, const vector<midi_event>& midi_events)
+inline void voice_allocator_process_block(voice_allocator& va,
+										  const vector<midi_event>& midi_events)
 {
 	// reset voice events and counts
 	for (int i = 0; i < MAX_VOICES; i++) {
-		for (int j = 0; j < MAX_EVENTS_PER_VOICE; j++) { va.voices[i].events[j] = midi_event {}; }
+		for (int j = 0; j < MAX_EVENTS_PER_VOICE; j++) {
+			va.voices[i].events[j] = midi_event {};
+		}
 		va.voices[i].event_count = 0;
 	}
 
@@ -119,13 +146,16 @@ inline void voice_allocator_process_block(voice_allocator& va, const vector<midi
 		}
 		case NOTE_OFF: {
 			for (size_t i = 0; i < va.active_voice_count; ++i) {
-				if (va.voices[i].midi_note == ev.midi_note) va.voices[i].events[va.voices[i].event_count++] = ev;
+				if (va.voices[i].midi_note == ev.midi_note)
+					va.voices[i].events[va.voices[i].event_count++] = ev;
 			}
 			break;
 		}
 		case PITCH_WHEEL:
 		case MOD_WHEEL: {
-			for (size_t i = 0; i < va.active_voice_count; ++i) { va.voices[i].events[va.voices[i].event_count++] = ev; }
+			for (size_t i = 0; i < va.active_voice_count; ++i) {
+				va.voices[i].events[va.voices[i].event_count++] = ev;
+			}
 			break;
 		}
 		}

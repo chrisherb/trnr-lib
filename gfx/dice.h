@@ -1,4 +1,28 @@
+/*
+ * dice.h
+ * Copyright (c) 2025 Christopher Herb
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #pragma once
+
 #include <array>
 
 using namespace std;
@@ -28,6 +52,7 @@ struct dice {
 	array<quad, 6> segments_left;
 };
 
+// caclulates coordinates for an isometric dice control with bar segments
 inline void dice_init(dice& d, float width, float height)
 {
 	const float shortening = 0.866f;
@@ -66,7 +91,8 @@ inline void dice_init(dice& d, float width, float height)
 
 	// calculate segments of the left face
 	for (int i = 0; i < d.segments_left.size(); i++) {
-		const point base_p1 = point {mid_x - face_width + pad_x, face_half_height + pad_y};
+		const point base_p1 =
+			point {mid_x - face_width + pad_x, face_half_height + pad_y};
 		const point base_p2 = point {mid_x - pad_x, face_height};
 		float seg_y = i * (segment_height + gap_height);
 		point p1 = {base_p1.x, base_p1.y + seg_y};
@@ -80,7 +106,8 @@ inline void dice_init(dice& d, float width, float height)
 	// correct center of the diamond face
 	// the diamond spans from b_p1 (top) to the middle of the left face
 	float diamond_center_x = mid_x;
-	float diamond_center_y = face_half_height / 2.0f + face_half_height / 2.0f; // move down to actual center
+	float diamond_center_y =
+		face_half_height / 2.0f + face_half_height / 2.0f; // move down to actual center
 
 	// for 30-degree isometric, the grid directions are:
 	float cos30 = 1.f;	// cos(30°) = √3/2 ≈ 0.866

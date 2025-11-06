@@ -1,11 +1,45 @@
+/*
+ * tube.h
+ * Copyright (c) 2016 Chris Johnson
+ * Copyright (c) 2025 Christopher Herb
+ * Based on Tube2 by Chris Johnson, 2016
+ * This file is a derivative/major refactor of the above module.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Changes:
+ * - 2025-11-06 Christopher Herb:
+ *  - Templated audio buffer i/o
+ *  - Converted to procedural programming style
+ */
+
 #pragma once
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <stdint.h>
 
+using namespace std;
+
 namespace trnr {
-// modeled tube preamp based on tube2 by Chris Johnson (MIT License)
+
 struct tube {
 	double samplerate;
 
@@ -22,9 +56,9 @@ struct tube {
 	float input_vol;
 	float tube_amt;
 
-	void set_input(double value) { input_vol = std::clamp(value, 0.0, 1.0); }
+	void set_input(double value) { input_vol = clamp(value, 0.0, 1.0); }
 
-	void set_tube(double value) { tube_amt = std::clamp(value, 0.0, 1.0); }
+	void set_tube(double value) { tube_amt = clamp(value, 0.0, 1.0); }
 };
 
 inline void tube_init(tube& t, double samplerate)
@@ -46,7 +80,8 @@ inline void tube_init(tube& t, double samplerate)
 }
 
 template <typename t_sample>
-inline void tube_process_block(tube& t, t_sample** inputs, t_sample** outputs, long sampleframes)
+inline void tube_process_block(tube& t, t_sample** inputs, t_sample** outputs,
+							   long sampleframes)
 {
 	t_sample* in1 = inputs[0];
 	t_sample* in2 = inputs[1];
@@ -114,13 +149,15 @@ inline void tube_process_block(tube& t, t_sample** inputs, t_sample** outputs, l
 		// original Tube algorithm: powerfactor widens the more linear region of the wave
 		double factor = input_l; // Left channel
 		for (int x = 0; x < powerfactor; x++) factor *= input_l;
-		if ((powerfactor % 2 == 1) && (input_l != 0.0)) factor = (factor / input_l) * fabs(input_l);
+		if ((powerfactor % 2 == 1) && (input_l != 0.0))
+			factor = (factor / input_l) * fabs(input_l);
 		factor *= gainscaling;
 		input_l -= factor;
 		input_l *= outputscaling;
 		factor = input_r; // Right channel
 		for (int x = 0; x < powerfactor; x++) factor *= input_r;
-		if ((powerfactor % 2 == 1) && (input_r != 0.0)) factor = (factor / input_r) * fabs(input_r);
+		if ((powerfactor % 2 == 1) && (input_r != 0.0))
+			factor = (factor / input_r) * fabs(input_r);
 		factor *= gainscaling;
 		input_r -= factor;
 		input_r *= outputscaling;
@@ -174,13 +211,13 @@ inline void tube_process_block(tube& t, t_sample** inputs, t_sample** outputs, l
 		t.fdp_l ^= t.fdp_l << 13;
 		t.fdp_l ^= t.fdp_l >> 17;
 		t.fdp_l ^= t.fdp_l << 5;
-		// inputSampleL += ((double(fpdL)-uint32_t(0x7fffffff)) * 1.1e-44l * pow(2,expon+62));
-		// frexp((double)inputSampleR, &expon);
+		// inputSampleL += ((double(fpdL)-uint32_t(0x7fffffff)) * 1.1e-44l *
+		// pow(2,expon+62)); frexp((double)inputSampleR, &expon);
 		t.fdp_r ^= t.fdp_r << 13;
 		t.fdp_r ^= t.fdp_r >> 17;
 		t.fdp_r ^= t.fdp_r << 5;
-		// inputSampleR += ((double(fpdR)-uint32_t(0x7fffffff)) * 1.1e-44l * pow(2,expon+62));
-		// end 64 bit stereo floating point dither
+		// inputSampleR += ((double(fpdR)-uint32_t(0x7fffffff)) * 1.1e-44l *
+		// pow(2,expon+62)); end 64 bit stereo floating point dither
 
 		*out1 = input_l;
 		*out2 = input_r;

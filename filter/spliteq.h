@@ -1,6 +1,30 @@
+/*
+ * spliteq.h
+ * Copyright (c) 2025 Christopher Herb
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #pragma once
-#include "audio_math.h"
-#include "smoother.h"
+
+#include "../util/audio_math.h"
+#include "../util/smoother.h"
 #include <cmath>
 #include <vector>
 
@@ -21,7 +45,8 @@ struct cascade_filter {
 	std::vector<double> state; // State per stage
 };
 
-inline void cascade_filter_setup(cascade_filter& f, filter_type _type, int _stages, double _cutoff, double _samplerate)
+inline void cascade_filter_setup(cascade_filter& f, filter_type _type, int _stages,
+								 double _cutoff, double _samplerate)
 {
 	f.type = _type;
 	f.stages = _stages;
@@ -119,7 +144,8 @@ struct aw_filter {
 	double samplerate;
 };
 
-inline void aw_filter_init(aw_filter& f, filter_type type, float amount, double samplerate)
+inline void aw_filter_init(aw_filter& f, filter_type type, float amount,
+						   double samplerate)
 {
 	f.type = type;
 	f.amount = amount;
@@ -269,7 +295,8 @@ struct spliteq {
 	smoother transition_smoother;
 };
 
-inline void spliteq_init(spliteq& eq, double samplerate, double low_mid_crossover, double mid_high_crossover)
+inline void spliteq_init(spliteq& eq, double samplerate, double low_mid_crossover,
+						 double mid_high_crossover)
 {
 	low_mid_crossover /= 2.0;
 	mid_high_crossover /= 2.0;
@@ -495,8 +522,9 @@ inline void spliteq_process_block(spliteq& eq, float** audio, int frames)
 	aw_filter_process_block(eq.lp_r, audio[1], frames);
 }
 
-inline void spliteq_update(spliteq& eq, double hp_freq, double lp_freq, double low_mid_crossover,
-						   double mid_high_crossover, double bass_gain, double mid_gain, double treble_gain)
+inline void spliteq_update(spliteq& eq, double hp_freq, double lp_freq,
+						   double low_mid_crossover, double mid_high_crossover,
+						   double bass_gain, double mid_gain, double treble_gain)
 {
 	low_mid_crossover /= 2.0;
 	mid_high_crossover /= 2.0;
@@ -534,8 +562,10 @@ inline void spliteq_update(spliteq& eq, double hp_freq, double lp_freq, double l
 
 	cascade_filter_setup(eq.bass_l, LOWPASS, 2, eq.low_mid_crossover_adj, eq.samplerate);
 	cascade_filter_setup(eq.bass_r, LOWPASS, 2, eq.low_mid_crossover_adj, eq.samplerate);
-	cascade_filter_setup(eq.treble_l, HIGHPASS, 2, eq.mid_high_crossover_adj, eq.samplerate);
-	cascade_filter_setup(eq.treble_r, HIGHPASS, 2, eq.mid_high_crossover_adj, eq.samplerate);
+	cascade_filter_setup(eq.treble_l, HIGHPASS, 2, eq.mid_high_crossover_adj,
+						 eq.samplerate);
+	cascade_filter_setup(eq.treble_r, HIGHPASS, 2, eq.mid_high_crossover_adj,
+						 eq.samplerate);
 
 	eq.bass1_l.cutoff = low_mid_crossover;
 	butterworth_biquad_coeffs(eq.bass1_l, eq.samplerate);
@@ -574,9 +604,10 @@ inline void spliteq_update(spliteq& eq, double hp_freq, double lp_freq, double l
 	butterworth_biquad_coeffs(eq.treble2_r, eq.samplerate);
 }
 
-inline void spliteq_update(spliteq& eq, double bass_gain, double mid_gain, double treble_gain)
+inline void spliteq_update(spliteq& eq, double bass_gain, double mid_gain,
+						   double treble_gain)
 {
-	trnr::spliteq_update(eq, eq.hp_l.amount, eq.lp_l.amount, eq.low_mid_crossover * 2.0, eq.mid_high_crossover * 2.0,
-						 bass_gain, mid_gain, treble_gain);
+	trnr::spliteq_update(eq, eq.hp_l.amount, eq.lp_l.amount, eq.low_mid_crossover * 2.0,
+						 eq.mid_high_crossover * 2.0, bass_gain, mid_gain, treble_gain);
 }
 } // namespace trnr

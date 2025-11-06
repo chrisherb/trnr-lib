@@ -1,6 +1,30 @@
+/*
+ * triplex.h
+ * Copyright (c) 2025 Christopher Herb
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #pragma once
-#include "audio_buffer.h"
-#include "audio_math.h"
+
+#include "../util/audio_buffer.h"
+#include "../util/audio_math.h"
 #include "voice_allocator.h"
 #include <cmath>
 #include <random>
@@ -45,7 +69,8 @@ inline float tx_wrap(float& phase)
 	return phase;
 }
 
-inline float tx_sineosc_process_sample(tx_sineosc& s, bool trigger, float frequency, float phase_modulation = 0.f)
+inline float tx_sineosc_process_sample(tx_sineosc& s, bool trigger, float frequency,
+									   float phase_modulation = 0.f)
 {
 	if (trigger) {
 		if (s.phase_reset) s.phase = 0.f;
@@ -133,15 +158,18 @@ inline void tx_envelope_init(tx_envelope& e, double samplerate, bool retrigger =
 	e.retrigger = retrigger;
 }
 
-inline size_t tx_mtos(float ms, double samplerate) { return static_cast<size_t>(ms * samplerate / 1000.f); }
+inline size_t tx_mtos(float ms, double samplerate)
+{
+	return static_cast<size_t>(ms * samplerate / 1000.f);
+}
 
 inline float tx_lerp(float x1, float y1, float x2, float y2, float x)
 {
 	return y1 + (((x - x1) * (y2 - y1)) / (x2 - x1));
 }
 
-inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger, float _attack_mod = 0,
-										float _decay_mod = 0)
+inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger,
+										float _attack_mod = 0, float _decay_mod = 0)
 {
 	size_t attack_mid_x1 = tx_mtos(e.attack1_rate + (float)_attack_mod, e.samplerate);
 	size_t attack_mid_x2 = tx_mtos(e.attack2_rate + (float)_attack_mod, e.samplerate);
@@ -162,7 +190,8 @@ inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger,
 	if (e.state == attack1) {
 		// while in attack phase
 		if (e.phase < attack_mid_x1) {
-			e.level = tx_lerp(0, e.start_level, (float)attack_mid_x1, e.attack1_level, (float)e.phase);
+			e.level = tx_lerp(0, e.start_level, (float)attack_mid_x1, e.attack1_level,
+							  (float)e.phase);
 			e.phase += 1;
 		}
 		// reset phase if parameter was changed
@@ -177,7 +206,8 @@ inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger,
 	if (e.state == attack2) {
 		// while in attack phase
 		if (e.phase < attack_mid_x2) {
-			e.level = tx_lerp(0, e.attack1_level, (float)attack_mid_x2, 1, (float)e.phase);
+			e.level =
+				tx_lerp(0, e.attack1_level, (float)attack_mid_x2, 1, (float)e.phase);
 			e.phase += 1;
 		}
 		// reset phase if parameter was changed
@@ -219,7 +249,8 @@ inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger,
 	if (e.state == decay2) {
 		// while in decay phase
 		if (e.phase < decay_mid_x2) {
-			e.level = tx_lerp(0, e.decay1_level, (float)decay_mid_x2, e.sustain_level, (float)e.phase);
+			e.level = tx_lerp(0, e.decay1_level, (float)decay_mid_x2, e.sustain_level,
+							  (float)e.phase);
 			e.phase += 1;
 		}
 		// reset phase if parameter was changed
@@ -240,7 +271,8 @@ inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger,
 	if (e.state == release1) {
 		// while in release phase
 		if (e.phase < release_mid_x1) {
-			e.level = tx_lerp(0, e.sustain_level, (float)release_mid_x1, e.release1_level, (float)e.phase);
+			e.level = tx_lerp(0, e.sustain_level, (float)release_mid_x1, e.release1_level,
+							  (float)e.phase);
 			e.phase += 1;
 		}
 		// reset phase if parameter was changed
@@ -255,7 +287,8 @@ inline float tx_envelope_process_sample(tx_envelope& e, bool gate, bool trigger,
 	if (e.state == release2) {
 		// while in release phase
 		if (e.phase < release_mid_x2) {
-			e.level = tx_lerp(0, e.release1_level, (float)release_mid_x2, 0, (float)e.phase);
+			e.level =
+				tx_lerp(0, e.release1_level, (float)release_mid_x2, 0, (float)e.phase);
 			e.phase += 1;
 		}
 		// reset phase if parameter was changed
@@ -293,8 +326,8 @@ inline void tx_operator_init(tx_operator& op, double samplerate)
 	tx_sineosc_init(op.oscillator, samplerate);
 }
 
-inline float tx_operator_process_sample(tx_operator& op, bool gate, bool trigger, float frequency, float velocity,
-										float pm = 0.f)
+inline float tx_operator_process_sample(tx_operator& op, bool gate, bool trigger,
+										float frequency, float velocity, float pm = 0.f)
 {
 	float env = tx_envelope_process_sample(op.envelope, gate, trigger);
 
@@ -336,16 +369,19 @@ inline void tx_voice_init(tx_state& s, double samplerate)
 	tx_operator_init(s.op3, samplerate);
 }
 
-inline void tx_voice_process_block(tx_state& t, voice_state& s, float** audio, size_t num_frames,
+inline void tx_voice_process_block(tx_state& t, voice_state& s, float** audio,
+								   size_t num_frames,
 								   const vector<audio_buffer<float>>& mods = {})
 {
-	float frequency = midi_to_frequency(s.midi_note + t.pitch_mod + t.additional_pitch_mod);
+	float frequency =
+		midi_to_frequency(s.midi_note + t.pitch_mod + t.additional_pitch_mod);
 
 	for (int i = 0; i < num_frames; i++) {
 
 		voice_process_event_for_frame(s, i);
 
-		float pitch_env_signal = tx_envelope_process_sample(t.pitch_env, s.gate, s.trigger) * t.pitch_env_amt;
+		float pitch_env_signal =
+			tx_envelope_process_sample(t.pitch_env, s.gate, s.trigger) * t.pitch_env_amt;
 		float pitched_freq = frequency + pitch_env_signal;
 
 		float output = 0.f;
@@ -354,77 +390,102 @@ inline void tx_voice_process_block(tx_state& t, voice_state& s, float** audio, s
 		if (t.algorithm == 0) {
 			float fb_freq = frequency * t.op3.ratio;
 			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
-			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+			float fb_signal =
+				tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) *
+				fb_mod_index;
 
 			float op3_Freq = frequency * t.op3.ratio;
 			float op3_mod_index = (t.op3.amplitude * MOD_INDEX_COEFF);
 			float op3_signal =
-				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_Freq, s.velocity, fb_signal) * op3_mod_index;
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_Freq, s.velocity,
+										   fb_signal) *
+				op3_mod_index;
 
 			float op2_freq = frequency * t.op2.ratio;
 			float op2_mod_index = (t.op2.amplitude * MOD_INDEX_COEFF);
 			float op2_signal =
-				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity, op3_signal) * op2_mod_index;
+				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity,
+										   op3_signal) *
+				op2_mod_index;
 
 			float op1_freq = frequency * t.op1.ratio;
-			output = tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity, op2_signal) *
+			output = tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq,
+												s.velocity, op2_signal) *
 					 t.op1.amplitude;
 		} else if (t.algorithm == 1) {
 			float fb_freq = frequency * t.op3.ratio;
 			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
-			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+			float fb_signal =
+				tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) *
+				fb_mod_index;
 
 			float op3_freq = frequency * t.op3.ratio;
 			float op3_signal =
-				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity, fb_signal) * t.op3.amplitude;
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity,
+										   fb_signal) *
+				t.op3.amplitude;
 
 			float op2_freq = frequency * t.op2.ratio;
 			float op2_mod_index = (t.op2.amplitude * MOD_INDEX_COEFF);
-			float op2_signal =
-				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity) * op2_mod_index;
+			float op2_signal = tx_operator_process_sample(t.op2, s.gate, s.trigger,
+														  op2_freq, s.velocity) *
+							   op2_mod_index;
 
 			float op1_freq = frequency * t.op1.ratio;
-			float op1_signal = tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity, op2_signal) *
-							   t.op1.amplitude;
+			float op1_signal =
+				tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity,
+										   op2_signal) *
+				t.op1.amplitude;
 
 			output = op1_signal + op3_signal;
 		} else if (t.algorithm == 2) {
 			float fb_freq = frequency * t.op3.ratio;
 			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
-			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+			float fb_signal =
+				tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) *
+				fb_mod_index;
 
 			float op3_freq = frequency * t.op3.ratio;
 			float op3_signal =
-				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity, fb_signal) * t.op3.amplitude;
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity,
+										   fb_signal) *
+				t.op3.amplitude;
 
 			float op2_freq = frequency * t.op2.ratio;
-			float op2_signal =
-				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity) * t.op2.amplitude;
+			float op2_signal = tx_operator_process_sample(t.op2, s.gate, s.trigger,
+														  op2_freq, s.velocity) *
+							   t.op2.amplitude;
 
 			float op1_freq = frequency * t.op1.ratio;
-			float op1_signal =
-				tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity) * t.op1.amplitude;
+			float op1_signal = tx_operator_process_sample(t.op1, s.gate, s.trigger,
+														  op1_freq, s.velocity) *
+							   t.op1.amplitude;
 
 			output = op1_signal + op2_signal + op3_signal;
 		} else if (t.algorithm == 3) {
 			float fb_freq = frequency * t.op3.ratio;
 			float fb_mod_index = (t.feedback_amt * MOD_INDEX_COEFF);
-			float fb_signal = tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) * fb_mod_index;
+			float fb_signal =
+				tx_sineosc_process_sample(t.feedback_osc, s.trigger, fb_freq) *
+				fb_mod_index;
 
 			float op3_freq = frequency * t.op3.ratio;
 			float op3_mod_index = (t.op3.amplitude * MOD_INDEX_COEFF);
 			float op3_signal =
-				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity, fb_signal) * op3_mod_index;
+				tx_operator_process_sample(t.op3, s.gate, s.trigger, op3_freq, s.velocity,
+										   fb_signal) *
+				op3_mod_index;
 
 			float op2_freq = frequency * t.op2.ratio;
 			float op2_mod_index = (t.op2.amplitude * MOD_INDEX_COEFF);
-			float op2_signal =
-				tx_operator_process_sample(t.op2, s.gate, s.trigger, op2_freq, s.velocity) * op2_mod_index;
+			float op2_signal = tx_operator_process_sample(t.op2, s.gate, s.trigger,
+														  op2_freq, s.velocity) *
+							   op2_mod_index;
 
 			float op1_freq = frequency * t.op1.ratio;
-			output =
-				tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq, s.velocity, op2_signal + op3_signal) *
-				t.op1.amplitude;
+			output = tx_operator_process_sample(t.op1, s.gate, s.trigger, op1_freq,
+												s.velocity, op2_signal + op3_signal) *
+					 t.op1.amplitude;
 		}
 
 		// reset trigger
@@ -532,19 +593,24 @@ inline void tx_synth_init(tx_synth& s, double samplerate)
 	for (int i = 0; i < MAX_VOICES; i++) { tx_voice_init(s.voices[i], samplerate); }
 }
 
-inline void tx_synth_process_block(tx_synth& s, float** audio, size_t num_frames, const vector<midi_event>& midi_events,
+inline void tx_synth_process_block(tx_synth& s, float** audio, size_t num_frames,
+								   const vector<midi_event>& midi_events,
 								   const vector<audio_buffer<float>>& mods = {})
 {
-	for (int i = 0; i < num_frames; i++) { audio[0][i] = audio[1][i] = 0.f; } // clear audio buffers
+	for (int i = 0; i < num_frames; i++) {
+		audio[0][i] = audio[1][i] = 0.f;
+	} // clear audio buffers
 
 	voice_allocator_process_block(s.allocator, midi_events);
 
 	for (int i = 0; i < s.allocator.active_voice_count; i++) {
-		tx_voice_process_block(s.voices[i], s.allocator.voices[i], audio, num_frames, mods);
+		tx_voice_process_block(s.voices[i], s.allocator.voices[i], audio, num_frames,
+							   mods);
 	}
 }
 
-inline void tx_apply_parameter_mapping(array<tx_state, MAX_VOICES>& v, tx_parameter_mapping& m, float value)
+inline void tx_apply_parameter_mapping(array<tx_state, MAX_VOICES>& v,
+									   tx_parameter_mapping& m, float value)
 {
 	if (m.range_min != m.range_max || m.exponent != 1.f)
 		value = powf(value, m.exponent) * (m.range_max - m.range_min) + m.range_min;
@@ -743,8 +809,8 @@ inline void tx_apply_parameter_mapping(array<tx_state, MAX_VOICES>& v, tx_parame
 	}
 }
 
-inline void tx_apply_parameter_mappings(array<tx_state, MAX_VOICES>& v, std::vector<tx_parameter_mapping>& m,
-										float value)
+inline void tx_apply_parameter_mappings(array<tx_state, MAX_VOICES>& v,
+										std::vector<tx_parameter_mapping>& m, float value)
 {
 	for (int i = 0; i < m.size(); i++) { tx_apply_parameter_mapping(v, m[i], value); }
 }

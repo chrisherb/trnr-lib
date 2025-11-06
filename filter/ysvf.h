@@ -1,3 +1,39 @@
+/*
+ * ysfv.h
+ * Copyright (c) 2016 Chris Johnson
+ * Copyright (c) 2025 Christopher Herb
+ * Based on work:
+ *  - YLowpass by Chris Johnson, 2016
+ *  - YHighpass by Chris Johnson, 2016
+ *  - YBandpass by Chris Johnson, 2016
+ *  - YNotch by Chris Johnson, 2016
+ * This file is a derivative/major refactor consolidating the above modules.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Changes:
+ * - 2025-11-06 Christopher Herb:
+ *  - Consolidated YLowpass, YHighpass, YBandpass, YNotch into one (state-variable) filter
+ *  - Templated audio buffer i/o
+ *  - Converted to procedural programming style
+ */
+
 #pragma once
 
 #define _USE_MATH_DEFINES
@@ -36,7 +72,7 @@ enum {
 	Y_BIQ_S_R1,
 	Y_BIQ_S_R2,
 	Y_BIQ_TOTAL
-}; // coefnncient interpolating biquad filter, stereo
+};
 
 enum {
 	Y_FIX_FREQ,
@@ -51,7 +87,7 @@ enum {
 	Y_FIX_S_R1,
 	Y_FIX_S_R2,
 	Y_FIX_TOTAL
-}; // fixed frequency biquad filter for ultrasonics, stereo
+};
 
 /////////////
 // LOWPASS //
@@ -1104,8 +1140,8 @@ inline void ysvf_set_param(ysvf& y, ysvf_parameters param, float value)
 }
 
 template <typename t_sample>
-inline void y_process_samples(ysvf& y, t_sample** inputs, t_sample** outputs,
-							  int block_size)
+inline void ysvf_process_samples(ysvf& y, t_sample** inputs, t_sample** outputs,
+								 int block_size)
 {
 	switch (y.filter_type) {
 	case Y_LOWPASS:
