@@ -36,14 +36,14 @@ struct demo_noise {
 	float noise_gain = 0.1f;
 };
 
-inline void demo_nose_init(demo_noise& d, double samplerate)
+inline void demo_noise_init(demo_noise& d, double samplerate)
 {
 	d.samplerate = samplerate;
 	d.counter = 0;
 }
 
 // overwrites the input buffer with noise in the specified time frame
-inline void process_block(demo_noise& d, float** samples, int blocksize)
+inline void demo_noise_process_block(demo_noise& d, float** samples, int blocksize)
 {
 	int noise_len_samples = d.noise_len_sec * d.samplerate;
 	int pause_len_samples = d.pause_len_sec * d.samplerate;
