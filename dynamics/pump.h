@@ -93,6 +93,30 @@ inline void pump_set_param(pump& p, pump_param param, float value)
 	}
 }
 
+inline float pump_get_param(const pump& p, pump_param param)
+{
+	switch (param) {
+	case PUMP_THRESHOLD:
+		return p.threshold_db;
+	case PUMP_ATTACK:
+		return p.attack_ms;
+	case PUMP_RELEASE:
+		return p.release_ms;
+	case PUMP_HP_FILTER:
+		return p.hp_filter;
+	case PUMP_RATIO:
+		return p.ratio;
+	case PUMP_FILTER_FRQ:
+		return p.filter_frq;
+	case PUMP_FILTER_EXP:
+		return p.filter_exp;
+	case PUMP_TREBLE_BOOST:
+		return p.treble_boost;
+	default:
+		return -1.f;
+	}
+}
+
 inline void pump_init(pump& p, double samplerate)
 {
 	p.samplerate = samplerate;
@@ -136,7 +160,8 @@ inline void pump_process_block(pump& p, sample** audio, sample** sidechain, int 
 		if (overshoot_db > p.envelope_db) {
 			p.envelope_db = overshoot_db + p.attack_coef * (p.envelope_db - overshoot_db);
 		} else {
-			p.envelope_db = overshoot_db + p.release_coef * (p.envelope_db - overshoot_db);
+			p.envelope_db =
+				overshoot_db + p.release_coef * (p.envelope_db - overshoot_db);
 		}
 
 		float slope = 1.f / p.ratio;
@@ -150,7 +175,8 @@ inline void pump_process_block(pump& p, sample** audio, sample** sidechain, int 
 		sample output_r = input_r * gain_reduction_lin;
 
 		if (p.filter_exp > 0.f) {
-			// one pole lowpass filter with envelope applied to frequency for pumping effect
+			// one pole lowpass filter with envelope applied to frequency for pumping
+			// effect
 			float freq = p.filter_frq * pow(gain_reduction_lin, p.filter_exp);
 			float lp_x = exp(-2.0 * M_PI * freq / p.samplerate);
 			float lp_a0 = 1.0 - lp_x;
