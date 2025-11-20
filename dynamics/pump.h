@@ -30,13 +30,14 @@ namespace trnr {
 struct pump {
 	double samplerate;
 	float threshold_db = 0.f;
-	float attack_ms = 10.f;
-	float release_ms = 100.f;
+	float attack_ms = 0.1f;
+	float release_ms = 200.f;
 	float hp_filter = 80.f;
 	float ratio = 1000.f;
-	float filter_frq = 40000.f;
-	float filter_exp = 0.f;
+	float filter_frq = 20000.f;
+	float filter_exp = 1.f;
 	float treble_boost = 0.f;
+    float makeup = 0.f;
 
 	float filtered = 0.f;
 	float filtered_l = 0.f;
@@ -192,7 +193,7 @@ inline void pump_process_block(pump& p, sample** audio, sample** sidechain, int 
 		output_r = p.filtered_r + (p.filtered_r - p.boosted_r) * p.treble_boost;
 
 		// calculate makeup gain
-		float makeup_lin = trnr::db_2_lin(-p.threshold_db / 5.f);
+		float makeup_lin = trnr::db_2_lin(p.makeup);
 
 		audio[0][i] = input_l * gain_reduction_lin * makeup_lin;
 		audio[1][i] = input_r * gain_reduction_lin * makeup_lin;
